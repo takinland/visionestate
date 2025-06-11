@@ -1,0 +1,56 @@
+async function loadLaws() {
+  const lang = document.getElementById('language').value;
+  const search = document.getElementById('search').value.toLowerCase();
+
+  const [lawsRes, catsRes] = await Promise.all([
+    fetch(`${SUPABASE_URL}/rest/v1/laws?select=*`, {
+      headers: {
+        apikey: API_KEY,
+        Authorization: `Bearer ${API_KEY}`
+      }
+    }),
+    fetch(`${SUPABASE_URL}/rest/v1/law_categories`, {
+      headers: {
+        apikey: API_KEY,
+        Authorization: `Bearer ${API_KEY}`
+      }
+    })
+  ]);
+
+  const laws = await lawsRes.json();
+  const categories = await catsRes.json();
+
+  const container = document.getElementById('laws');
+  container.innerHTML = '';
+
+  laws.forEach(law => {
+    const div = document.createElement('div');
+    div.className = 'border p-4 mb-4 bg-white shadow rounded';
+
+    const title = lang === 'tr' ? law.title_original :
+                  lang === 'fa' ? law.title_fa :
+                  lang === 'ru' ? law.title_ru :
+                                 law.title_en;
+
+    const catNames = (law.categories_original || [])
+      .map(id => {
+        const cat = categories.find(c => c.id === id);
+        return cat ? (
+          lang === 'tr' ? cat.name :
+          lang === 'fa' ? cat.name_fa :
+          lang === 'ru' ? cat.name_ru :
+                         cat.name_en
+        ) : null;
+      })
+      .filter(Boolean)
+      .join(', ') || 'Not specified';
+
+    div.innerHTML = `
+      <h2 class="text-xl font-semibold mb-2 text-blue-600 underline cursor-pointer" onclick="window.location.href='LAW_details.html?id=${encodeURIComponent(law.law_id)}'">${title}</h2>
+      <p class="text-gray-600 text-sm mb-1">Law ID: ${law.law_id}</p>
+      <p class="text-gray-600 text-sm mb-1">Category: ${catNames}</p>
+      <p class="text-gray-500 text-sm">Published: ${law.publish_date}</p>
+    `;
+    container.appendChild(div);
+  });
+}
