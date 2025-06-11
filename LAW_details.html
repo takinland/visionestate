@@ -8,7 +8,7 @@
 </head>
 <body class="bg-gray-100 font-sans">
   <div class="max-w-4xl mx-auto p-6">
-    <a href="LAWS.html" class="text-blue-600 underline mb-4 inline-block">Back to list</a>
+    <a href="LAWS.html" class="text-blue-600 underline mb-4 inline-block" id="back-link">Back to list</a>
     <div id="law-detail" class="bg-white p-6 rounded shadow"></div>
   </div>
 
@@ -16,10 +16,34 @@
     const SUPABASE_URL = 'https://tdvimwqotnuvcdvhvbjj.supabase.co';
     const API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRkdmltd3FvdG51dmNkdmh2YmpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkxMDY2MjcsImV4cCI6MjA2NDY4MjYyN30.CWNPk-S-ECq0c1LRugDJYOchY3mgC2Zchyr8X8-mDeE';
 
+    const labels = {
+      en: { lawId: "Law ID:", category: "Category:", published: "Published:", back: "Back to list" },
+      fa: { lawId: "شناسه:", category: "دسته‌بندی:", published: "تاریخ انتشار:", back: "بازگشت به لیست" },
+      tr: { lawId: "Kanun No:", category: "Kategori:", published: "Yayın Tarihi:", back: "Listeye Dön" },
+      ru: { lawId: "ID закона:", category: "Категория:", published: "Дата публикации:", back: "Назад к списку" }
+    };
+
     async function loadLawDetails() {
       const urlParams = new URLSearchParams(window.location.search);
       const lawId = urlParams.get('id');
       const lang = urlParams.get('lang') || 'en';
+
+      // تنظیم جهت صفحه
+      const html = document.documentElement;
+      const body = document.body;
+      if (lang === 'fa') {
+        html.setAttribute('dir', 'rtl');
+        body.classList.add('text-right');
+      } else {
+        html.setAttribute('dir', 'ltr');
+        body.classList.remove('text-right');
+      }
+
+      const t = labels[lang];
+
+      // تغییر متن لینک بازگشت
+      const backLink = document.getElementById('back-link');
+      backLink.textContent = t.back;
 
       if (!lawId) return;
 
@@ -43,14 +67,14 @@
       }
 
       const title =
-        lang === 'tr' ? law.title_original :
         lang === 'fa' ? law.title_fa :
+        lang === 'tr' ? law.title_original :
         lang === 'ru' ? law.title_ru :
         law.title_en;
 
-      const body =
-        lang === 'tr' ? law.body_original :
+      const bodyText =
         lang === 'fa' ? law.body_fa :
+        lang === 'tr' ? law.body_original :
         lang === 'ru' ? law.body_ru :
         law.body_en;
 
@@ -59,8 +83,8 @@
           const cat = categories.find(c => c.id === id);
           if (!cat) return null;
           return (
-            lang === 'tr' ? cat.name :
             lang === 'fa' ? cat.name_fa :
+            lang === 'tr' ? cat.name :
             lang === 'ru' ? cat.name_ru :
             cat.name_en
           );
@@ -70,10 +94,10 @@
 
       container.innerHTML = `
         <h1 class="text-2xl font-bold mb-4">${title}</h1>
-        <p class="text-gray-600 mb-2"><strong>Law ID:</strong> ${law.law_id}</p>
-        <p class="text-gray-600 mb-2"><strong>Category:</strong> ${catNames}</p>
-        <p class="text-gray-600 mb-4"><strong>Publish Date:</strong> ${law.publish_date}</p>
-        <div class="border p-4 rounded bg-gray-50 whitespace-pre-line">${body}</div>
+        <p class="text-gray-600 mb-2"><strong>${t.lawId}</strong> ${law.law_id}</p>
+        <p class="text-gray-600 mb-2"><strong>${t.category}</strong> ${catNames}</p>
+        <p class="text-gray-600 mb-4"><strong>${t.published}</strong> ${law.publish_date}</p>
+        <div class="border p-4 rounded bg-gray-50 whitespace-pre-line">${bodyText}</div>
       `;
     }
 
