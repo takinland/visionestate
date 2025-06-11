@@ -1,18 +1,18 @@
-<!-- LAWS.html - Frontend for Legal Lens Archive -->
+<!-- index.html for GitHub project root -->
 <!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>LAWS - Legal Archive Web System</title>
+    <title>LAWS - Legal Archive Portal</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
     <script>
       async function loadCategories() {
         const lang = document.getElementById('language').value;
-        const res = await fetch('https://your-supabase-url.supabase.co/rest/v1/law_categories', {
+        const res = await fetch('https://tdvimwqotnuvcdvhvbjj.supabase.co/rest/v1/law_categories', {
           headers: {
-            apikey: 'your-public-anon-key',
-            Authorization: 'Bearer your-public-anon-key'
+            apikey: 'your-anon-key',
+            Authorization: 'Bearer your-anon-key'
           }
         });
         const categories = await res.json();
@@ -20,34 +20,18 @@
         select.innerHTML = '<option value="all">' + (lang === 'tr' ? 'Tüm Kategoriler' : lang === 'fa' ? 'همه دسته‌بندی‌ها' : lang === 'ru' ? 'Все категории' : 'All Categories') + '</option>';
         categories.forEach(cat => {
           const option = document.createElement('option');
-          option.value = cat.category_id;
-          option.textContent = lang === 'tr' ? cat.title_tr : lang === 'fa' ? cat.title_fa : lang === 'ru' ? cat.title_ru : cat.title_en;
+          option.value = cat.id;
+          option.textContent = lang === 'tr' ? cat.name :
+                               lang === 'fa' ? cat.name_fa :
+                               lang === 'ru' ? cat.name_ru :
+                                              cat.name_en;
           select.appendChild(option);
         });
       }
 
-      async function updatePDFLink() {
-        const lang = document.getElementById('language').value;
-        const law = {
-          pdf_url_original: 'https://example.com/laws/2025-117.pdf',
-          pdf_url_en: 'https://example.com/laws/2025-117.en.pdf',
-          pdf_url_fa: 'https://example.com/laws/2025-117.fa.pdf',
-          pdf_url_ru: 'https://example.com/laws/2025-117.ru.pdf'
-        };
-        let url = law.pdf_url_original;
-        if (lang === 'en' && law.pdf_url_en) url = law.pdf_url_en;
-        if (lang === 'fa' && law.pdf_url_fa) url = law.pdf_url_fa;
-        if (lang === 'ru' && law.pdf_url_ru) url = law.pdf_url_ru;
-        document.getElementById('pdf-download').href = url;
-      }
-
       window.onload = () => {
         loadCategories();
-        updatePDFLink();
-        document.getElementById('language').addEventListener('change', () => {
-          loadCategories();
-          updatePDFLink();
-        });
+        document.getElementById('language').addEventListener('change', loadCategories);
       };
     </script>
   </head>
@@ -55,7 +39,6 @@
     <div class="max-w-5xl mx-auto p-6">
       <h1 class="text-3xl font-bold text-center mb-6">Official Laws Archive</h1>
 
-      <!-- Filters -->
       <div class="flex flex-col md:flex-row items-center justify-between mb-4 gap-2">
         <select id="language" class="border p-2 rounded">
           <option value="en">English</option>
@@ -69,38 +52,6 @@
         </select>
 
         <input id="search" type="text" placeholder="Search laws..." class="border p-2 rounded w-full md:w-1/3" />
-      </div>
-
-      <!-- Law List (Sample entry) -->
-      <div class="bg-white shadow p-4 rounded mb-4">
-        <a href="#" class="text-blue-700 text-lg font-bold">SECTION I - LAW ON AMENDMENTS TO THE GAMES OF CHANCE</a>
-        <p class="text-sm text-gray-600">Law ID: 2025-117</p>
-        <p class="text-sm text-gray-600">Category: Other topics</p>
-        <p class="text-sm text-right text-gray-500">6/7/2025</p>
-      </div>
-
-      <!-- Details Section Template (to be populated dynamically) -->
-      <div id="law-details" class="hidden bg-white shadow p-4 rounded">
-        <div class="flex items-center justify-between mb-4">
-          <button onclick="document.getElementById('law-details').classList.add('hidden')" class="text-blue-600">&larr; Back to List</button>
-          <a href="#" id="pdf-download" class="text-sm text-white bg-blue-600 px-3 py-1 rounded hover:bg-blue-700">Download PDF</a>
-        </div>
-        <div class="bg-yellow-100 p-2 rounded text-yellow-800 mb-4">
-          <strong>Warning:</strong> Sample warning
-        </div>
-        <h2 class="text-xl font-bold">SECTION I - LAW ON AMENDMENTS TO THE GAMES OF CHANCE</h2>
-        <p class="text-sm">Law ID: 2025-117 | Category: Other topics | Published: 6/7/2025</p>
-        <p class="text-sm">Original Title: <em>EK I BÖLÜM I - ŞANS OYUNLARI (DEĞİŞİKLİK)YASASI</em></p>
-        <div class="mt-4 p-3 border rounded bg-gray-50 text-sm whitespace-pre-wrap">
-          SECTION I - LAW ON AMENDMENTS TO THE GAMES OF CHANCE
-          LAW ON AMENDMENTS TO THE UNION OF CYPRUS TURKISH CONSTRUCTION SUBCONTRACTORS
-          LAW ON AMENDMENTS TO THE CYPRUS TURKISH CHAMBER OF INDUSTRY
-          LAW ON AMENDMENTS TO THE CYPRUS TURKISH TRADESMEN AND CRAFTSMEN ASSOCIATION
-          LAW ON AMENDMENTS TO THE CYPRUS TURKISH CONTRACTORS ASSOCIATION
-          LAW ON AMENDMENTS TO THE INCOME TAX
-          LAW ON AMENDMENTS TO THE TRAFFIC DEPARTMENT (ESTABLISHMENT, DUTIES AND WORKING PRINCIPLES)
-          LAW ON THE CURRENCY AND DEVELOPMENT FUND DEPARTMENT (ESTABLISHMENT, DUTIES AND WORKING PRINCIPLES)
-        </div>
       </div>
     </div>
   </body>
