@@ -20,7 +20,11 @@
         });
         const categories = await res.json();
         const select = document.getElementById('category');
-        select.innerHTML = '';
+        select.innerHTML = '<option value="all">' +
+            (lang === 'tr' ? 'Tüm Kategoriler' :
+             lang === 'fa' ? 'همه دسته‌بندی‌ها' :
+             lang === 'ru' ? 'Все категории' :
+             'All Categories') + '</option>';
         categories.forEach(cat => {
           const option = document.createElement('option');
           option.value = cat.id;
@@ -34,7 +38,43 @@
 
       async function loadLaws() {
         const lang = document.getElementById('language').value;
+        const search = document.getElementById('search').value.toLowerCase();
         const res = await fetch(`${SUPABASE_URL}/rest/v1/laws?select=*`, {
+          headers: {
+            apikey: API_KEY,
+            Authorization: `Bearer ${API_KEY}`
+          }
+        });
+        const laws = await res.json();
+        const container = document.getElementById('laws');
+        container.innerHTML = '';
+        laws
+          .filter(law => {
+            const title = lang === 'tr' ? law.title_original :
+                          lang === 'fa' ? law.title_fa :
+                          lang === 'ru' ? law.title_ru :
+                                         law.title_en;
+            return title.toLowerCase().includes(search);
+          })
+          .forEach(law => {
+            const div = document.createElement('div');
+            div.className = 'border p-4 mb-4 bg-white shadow rounded cursor-pointer';
+            const title = lang === 'tr' ? law.title_original :
+                          lang === 'fa' ? law.title_fa :
+                          lang === 'ru' ? law.title_ru :
+                                         law.title_en;
+            div.innerHTML = `
+              <h2 class="text-xl font-semibold mb-2">${title}</h2>
+              <p class="text-gray-600 text-sm mb-1">Law ID: ${law.law_id}</p>
+              <p class="text-gray-600 text-sm mb-1">Category: Not specified</p>
+              <p class="text-gray-500 text-sm">Published: ${law.publish_date}</p>
+            `;
+            div.addEventListener('click', () => {
+              window.location.href = `details.html?id=${encodeURIComponent(law.law_id)}`;
+            });
+            container.appendChild(div);
+          });
+      }/rest/v1/laws?select=*`, {
           headers: {
             apikey: API_KEY,
             Authorization: `Bearer ${API_KEY}`
@@ -53,7 +93,7 @@
           div.innerHTML = `
             <h2 class="text-xl font-semibold mb-2">${title}</h2>
             <p class="text-gray-600 text-sm mb-1">Law ID: ${law.law_id}</p>
-            <p class="text-gray-600 text-sm mb-1">Category: ${law.categories}</p>
+            <p class="text-gray-600 text-sm mb-1">Category: Not specified</p>
             <p class="text-gray-500 text-sm">Published: ${law.publish_date}</p>
           `;
           container.appendChild(div);
@@ -67,12 +107,13 @@
           loadCategories();
           loadLaws();
         });
+        document.getElementById('search').addEventListener('input', loadLaws);
       };
     </script>
   </head>
   <body class="bg-gray-50 font-sans">
     <div class="max-w-5xl mx-auto p-6">
-      <h1 class="text-3xl font-bold text-center mb-6">Official Laws Archive</h1>
+      
 
       <div class="flex flex-col md:flex-row items-center justify-between mb-4 gap-2">
         <select id="language" class="border p-2 rounded">
