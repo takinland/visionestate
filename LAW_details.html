@@ -19,22 +19,16 @@
     async function loadLawDetails() {
       const urlParams = new URLSearchParams(window.location.search);
       const lawId = urlParams.get('id');
-      const lang = 'en'; // قابل توسعه در آینده
+      const lang = urlParams.get('lang') || 'en';
 
       if (!lawId) return;
 
       const [lawRes, catsRes] = await Promise.all([
         fetch(`${SUPABASE_URL}/rest/v1/laws?law_id=eq.${lawId}&select=*`, {
-          headers: {
-            apikey: API_KEY,
-            Authorization: `Bearer ${API_KEY}`
-          }
+          headers: { apikey: API_KEY, Authorization: `Bearer ${API_KEY}` }
         }),
         fetch(`${SUPABASE_URL}/rest/v1/law_categories`, {
-          headers: {
-            apikey: API_KEY,
-            Authorization: `Bearer ${API_KEY}`
-          }
+          headers: { apikey: API_KEY, Authorization: `Bearer ${API_KEY}` }
         })
       ]);
 
