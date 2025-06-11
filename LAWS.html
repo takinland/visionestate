@@ -31,6 +31,31 @@
     const SUPABASE_URL = 'https://tdvimwqotnuvcdvhvbjj.supabase.co';
     const API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRkdmltd3FvdG51dmNkdmh2YmpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkxMDY2MjcsImV4cCI6MjA2NDY4MjYyN30.CWNPk-S-ECq0c1LRugDJYOchY3mgC2Zchyr8X8-mDeE';
 
+    function updateDirectionAndLabels(lang) {
+      const html = document.documentElement;
+      const body = document.body;
+
+      if (lang === 'fa') {
+        html.setAttribute('dir', 'rtl');
+        body.classList.add('text-right');
+      } else {
+        html.setAttribute('dir', 'ltr');
+        body.classList.remove('text-right');
+      }
+
+      // Update placeholder
+      const searchInput = document.getElementById('search');
+      if (lang === 'fa') {
+        searchInput.placeholder = 'جستجوی قوانین...';
+      } else if (lang === 'tr') {
+        searchInput.placeholder = 'Kanunlarda ara...';
+      } else if (lang === 'ru') {
+        searchInput.placeholder = 'Поиск по законам...';
+      } else {
+        searchInput.placeholder = 'Search laws...';
+      }
+    }
+
     async function loadCategories() {
       try {
         const lang = document.getElementById('language').value;
@@ -140,17 +165,23 @@
     }
 
     window.onload = () => {
-      // بازگرداندن زبان ذخیره‌شده در localStorage
+      const langSelect = document.getElementById('language');
       const savedLang = localStorage.getItem('selectedLanguage');
+
       if (savedLang) {
-        document.getElementById('language').value = savedLang;
+        langSelect.value = savedLang;
       }
 
-      loadCategories().then(loadLaws);
+      updateDirectionAndLabels(langSelect.value);
 
-      document.getElementById('language').addEventListener('change', () => {
-        const lang = document.getElementById('language').value;
-        localStorage.setItem('selectedLanguage', lang);
+      setTimeout(() => {
+        loadCategories().then(loadLaws);
+      }, 10);
+
+      langSelect.addEventListener('change', () => {
+        const newLang = langSelect.value;
+        localStorage.setItem('selectedLanguage', newLang);
+        updateDirectionAndLabels(newLang);
         loadCategories().then(loadLaws);
       });
 
