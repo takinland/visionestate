@@ -43,16 +43,33 @@
         body.classList.remove('text-right');
       }
 
-      // Update placeholder
       const searchInput = document.getElementById('search');
+      const langSelect = document.getElementById('language');
+
       if (lang === 'fa') {
         searchInput.placeholder = 'جستجوی قوانین...';
+        langSelect.options[0].text = 'انگلیسی';
+        langSelect.options[1].text = 'ترکی';
+        langSelect.options[2].text = 'فارسی';
+        langSelect.options[3].text = 'روسی';
       } else if (lang === 'tr') {
         searchInput.placeholder = 'Kanunlarda ara...';
+        langSelect.options[0].text = 'İngilizce';
+        langSelect.options[1].text = 'Türkçe';
+        langSelect.options[2].text = 'Farsça';
+        langSelect.options[3].text = 'Rusça';
       } else if (lang === 'ru') {
         searchInput.placeholder = 'Поиск по законам...';
+        langSelect.options[0].text = 'Английский';
+        langSelect.options[1].text = 'Турецкий';
+        langSelect.options[2].text = 'Персидский';
+        langSelect.options[3].text = 'Русский';
       } else {
         searchInput.placeholder = 'Search laws...';
+        langSelect.options[0].text = 'English';
+        langSelect.options[1].text = 'Turkish';
+        langSelect.options[2].text = 'Persian';
+        langSelect.options[3].text = 'Russian';
       }
     }
 
