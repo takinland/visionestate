@@ -18,13 +18,13 @@
       </select>
 
       <select id="category" class="border p-2 rounded">
-        <!-- گزینه‌ها به‌صورت داینامیک لود می‌شوند -->
+        <!-- همه دسته‌ها مستقیماً از دیتابیس بارگذاری می‌شوند -->
       </select>
 
       <input id="search" type="text" placeholder="Search laws..." class="border p-2 rounded w-full md:w-1/3" />
     </div>
 
-    <div id="laws"></div>
+    <div id="laws" class="text-sm text-gray-700">Loading...</div>
   </div>
 
   <script>
@@ -32,129 +32,118 @@
     const API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRkdmltd3FvdG51dmNkdmh2YmpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkxMDY2MjcsImV4cCI6MjA2NDY4MjYyN30.CWNPk-S-ECq0c1LRugDJYOchY3mgC2Zchyr8X8-mDeE';
 
     async function loadCategories() {
-      const lang = document.getElementById('language').value;
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/law_categories`, {
-        headers: {
-          apikey: API_KEY,
-          Authorization: `Bearer ${API_KEY}`
-        }
-      });
-      const categories = await res.json();
-      const select = document.getElementById('category');
+      try {
+        const lang = document.getElementById('language').value;
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/law_categories`, {
+          headers: { apikey: API_KEY, Authorization: `Bearer ${API_KEY}` }
+        });
+        const categories = await res.json();
 
-      select.innerHTML = '';
+        const select = document.getElementById('category');
+        select.innerHTML = '';
 
-      // گزینه پیش‌فرض All Categories
-      const defaultOption = document.createElement('option');
-      defaultOption.value = 'all';
-      defaultOption.textContent =
-        lang === 'tr' ? 'Tüm Kategoriler' :
-        lang === 'fa' ? 'همه دسته‌بندی‌ها' :
-        lang === 'ru' ? 'Все категории' :
-        'All Categories';
-      select.appendChild(defaultOption);
-
-      // سایر دسته‌بندی‌ها از دیتابیس
-      categories.forEach(cat => {
-        const option = document.createElement('option');
-        option.value = cat.id;
-        option.textContent =
-          lang === 'tr' ? cat.name :
-          lang === 'fa' ? cat.name_fa :
-          lang === 'ru' ? cat.name_ru :
-          cat.name_en;
-        select.appendChild(option);
-      });
+        categories.forEach(cat => {
+          const option = document.createElement('option');
+          option.value = cat.id;
+          option.textContent =
+            lang === 'tr' ? cat.name :
+            lang === 'fa' ? cat.name_fa :
+            lang === 'ru' ? cat.name_ru :
+            cat.name_en;
+          select.appendChild(option);
+        });
+      } catch (err) {
+        console.error('Error loading categories:', err);
+      }
     }
 
     async function loadLaws() {
-      const lang = document.getElementById('language').value;
-      const selectedCat = document.getElementById('category').value;
-      const search = document.getElementById('search').value.toLowerCase();
+      try {
+        const lang = document.getElementById('language').value;
+        const selectedCat = document.getElementById('category').value;
+        const search = document.getElementById('search').value.toLowerCase();
 
-      const [lawsRes, catsRes] = await Promise.all([
-        fetch(`${SUPABASE_URL}/rest/v1/laws?select=*`, {
-          headers: {
-            apikey: API_KEY,
-            Authorization: `Bearer ${API_KEY}`
-          }
-        }),
-        fetch(`${SUPABASE_URL}/rest/v1/law_categories`, {
-          headers: {
-            apikey: API_KEY,
-            Authorization: `Bearer ${API_KEY}`
-          }
-        })
-      ]);
+        const [lawsRes, catsRes] = await Promise.all([
+          fetch(`${SUPABASE_URL}/rest/v1/laws?select=*`, {
+            headers: { apikey: API_KEY, Authorization: `Bearer ${API_KEY}` }
+          }),
+          fetch(`${SUPABASE_URL}/rest/v1/law_categories`, {
+            headers: { apikey: API_KEY, Authorization: `Bearer ${API_KEY}` }
+          })
+        ]);
 
-      const laws = await lawsRes.json();
-      const categories = await catsRes.json();
+        const laws = await lawsRes.json();
+        const categories = await catsRes.json();
+        const container = document.getElementById('laws');
+        container.innerHTML = '';
 
-      const container = document.getElementById('laws');
-      container.innerHTML = '';
+        laws
+          .filter(law => {
+            if (selectedCat && !isNaN(selectedCat)) {
+              return (law.categories_original || []).includes(parseInt(selectedCat));
+            }
+            return true;
+          })
+          .filter(law => {
+            const title =
+              lang === 'tr' ? law.title_original :
+              lang === 'fa' ? law.title_fa :
+              lang === 'ru' ? law.title_ru :
+              law.title_en;
+            return title?.toLowerCase().includes(search);
+          })
+          .forEach(law => {
+            const title =
+              lang === 'tr' ? law.title_original :
+              lang === 'fa' ? law.title_fa :
+              lang === 'ru' ? law.title_ru :
+              law.title_en;
 
-      laws
-        .filter(law => {
-          // فیلتر دسته‌بندی
-          if (selectedCat !== 'all') {
-            return (law.categories_original || []).includes(parseInt(selectedCat));
-          }
-          return true;
-        })
-        .filter(law => {
-          // فیلتر براساس جستجو
-          const title =
-            lang === 'tr' ? law.title_original :
-            lang === 'fa' ? law.title_fa :
-            lang === 'ru' ? law.title_ru :
-            law.title_en;
-          return title?.toLowerCase().includes(search);
-        })
-        .forEach(law => {
-          const title =
-            lang === 'tr' ? law.title_original :
-            lang === 'fa' ? law.title_fa :
-            lang === 'ru' ? law.title_ru :
-            law.title_en;
+            const catNames = (law.categories_original || [])
+              .map(id => {
+                const cat = categories.find(c => c.id === id);
+                if (!cat) return null;
+                return (
+                  lang === 'tr' ? cat.name :
+                  lang === 'fa' ? cat.name_fa :
+                  lang === 'ru' ? cat.name_ru :
+                  cat.name_en
+                );
+              })
+              .filter(Boolean)
+              .join(', ') || 'Not specified';
 
-          const catNames = (law.categories_original || [])
-            .map(id => {
-              const cat = categories.find(c => c.id === id);
-              if (!cat) return null;
-              return (
-                lang === 'tr' ? cat.name :
-                lang === 'fa' ? cat.name_fa :
-                lang === 'ru' ? cat.name_ru :
-                cat.name_en
-              );
-            })
-            .filter(Boolean)
-            .join(', ') || 'Not specified';
+            const div = document.createElement('div');
+            div.className = 'border p-4 mb-4 bg-white shadow rounded';
 
-          const div = document.createElement('div');
-          div.className = 'border p-4 mb-4 bg-white shadow rounded';
+            div.innerHTML = `
+              <h2 class="text-xl font-semibold mb-2 text-blue-600 underline cursor-pointer"
+                  onclick="window.location.href='LAW_details.html?id=${encodeURIComponent(law.law_id)}'">
+                ${title}
+              </h2>
+              <p class="text-gray-600 text-sm mb-1">Law ID: ${law.law_id}</p>
+              <p class="text-gray-600 text-sm mb-1">Category: ${catNames}</p>
+              <p class="text-gray-500 text-sm">Published: ${law.publish_date}</p>
+            `;
 
-          div.innerHTML = `
-            <h2 class="text-xl font-semibold mb-2 text-blue-600 underline cursor-pointer"
-                onclick="window.location.href='LAW_details.html?id=${encodeURIComponent(law.law_id)}'">
-              ${title}
-            </h2>
-            <p class="text-gray-600 text-sm mb-1">Law ID: ${law.law_id}</p>
-            <p class="text-gray-600 text-sm mb-1">Category: ${catNames}</p>
-            <p class="text-gray-500 text-sm">Published: ${law.publish_date}</p>
-          `;
+            container.appendChild(div);
+          });
 
-          container.appendChild(div);
-        });
+        if (container.innerHTML === '') {
+          container.innerHTML = '<p class="text-gray-500">No laws found for this category.</p>';
+        }
+
+      } catch (err) {
+        console.error('Error loading laws:', err);
+        document.getElementById('laws').innerHTML = `<p class="text-red-500">Failed to load laws.</p>`;
+      }
     }
 
     window.onload = () => {
-      loadCategories();
-      loadLaws();
+      loadCategories().then(loadLaws);
 
       document.getElementById('language').addEventListener('change', () => {
-        loadCategories();
-        loadLaws();
+        loadCategories().then(loadLaws);
       });
 
       document.getElementById('category').addEventListener('change', loadLaws);
