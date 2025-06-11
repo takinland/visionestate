@@ -5,53 +5,78 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Law Details</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
-    <script>
-      const SUPABASE_URL = 'https://tdvimwqotnuvcdvhvbjj.supabase.co';
-      const API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRkdmltd3FvdG51dmNkdmh2YmpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkxMDY2MjcsImV4cCI6MjA2NDY4MjYyN30.CWNPk-S-ECq0c1LRugDJYOchY3mgC2Zchyr8X8-mDeE';
+<script>
+  const SUPABASE_URL = 'https://tdvimwqotnuvcdvhvbjj.supabase.co';
+  const API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRkdmltd3FvdG51dmNkdmh2YmpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkxMDY2MjcsImV4cCI6MjA2NDY4MjYyN30.CWNPk-S-ECq0c1LRugDJYOchY3mgC2Zchyr8X8-mDeE';
 
-      async function loadLawDetails() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const lawId = urlParams.get('id');
-        const lang = 'en'; // زبان پیش‌فرض - بعداً می‌تونیم قابل تغییرش کنیم
+  async function loadLawDetails() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const lawId = urlParams.get('id');
+    const lang = document.getElementById('language')?.value || 'en';
 
-        if (!lawId) return;
+    if (!lawId) return;
 
-        const res = await fetch(`${SUPABASE_URL}/rest/v1/laws?law_id=eq.${lawId}&select=*`, {
-          headers: {
-            apikey: API_KEY,
-            Authorization: `Bearer ${API_KEY}`
-          }
-        });
-
-        const laws = await res.json();
-        const law = laws[0];
-
-        const container = document.getElementById('law-detail');
-        if (!law) {
-          container.innerHTML = '<p class="text-red-500">Law not found.</p>';
-          return;
+    const [lawRes, catsRes] = await Promise.all([
+      fetch(`${SUPABASE_URL}/rest/v1/laws?law_id=eq.${lawId}&select=*`, {
+        headers: {
+          apikey: API_KEY,
+          Authorization: `Bearer ${API_KEY}`
         }
+      }),
+      fetch(`${SUPABASE_URL}/rest/v1/law_categories`, {
+        headers: {
+          apikey: API_KEY,
+          Authorization: `Bearer ${API_KEY}`
+        }
+      })
+    ]);
 
-        const title = lang === 'tr' ? law.title_original :
-                      lang === 'fa' ? law.title_fa :
-                      lang === 'ru' ? law.title_ru :
-                                     law.title_en;
+    const laws = await lawRes.json();
+    const categories = await catsRes.json();
+    const law = laws[0];
 
-        const body = lang === 'tr' ? law.body_original :
-                     lang === 'fa' ? law.body_fa :
-                     lang === 'ru' ? law.body_ru :
-                                    law.body_en;
+    const container = document.getElementById('law-detail');
+    if (!law) {
+      container.innerHTML = '<p class="text-red-500">Law not found.</p>';
+      return;
+    }
 
-        container.innerHTML = `
-          <h1 class="text-2xl font-bold mb-4">${title}</h1>
-          <p class="text-gray-600 mb-2">Law ID: ${law.law_id}</p>
-          <p class="text-gray-600 mb-2">Publish Date: ${law.publish_date}</p>
-          <div class="mt-4 border p-4 rounded bg-white">${body}</div>
-        `;
-      }
+    const title = lang === 'tr' ? law.title_original :
+                  lang === 'fa' ? law.title_fa :
+                  lang === 'ru' ? law.title_ru :
+                  law.title_en;
 
-      window.onload = loadLawDetails;
-    </script>
+    const body = lang === 'tr' ? law.body_original :
+                 lang === 'fa' ? law.body_fa :
+                 lang === 'ru' ? law.body_ru :
+                 law.body_en;
+
+    const catNames = (law.categories_original || [])
+      .map(id => {
+        const cat = categories.find(c => c.id === id);
+        if (!cat) return null;
+        return (
+          lang === 'tr' ? cat.name :
+          lang === 'fa' ? cat.name_fa :
+          lang === 'ru' ? cat.name_ru :
+          cat.name_en
+        );
+      })
+      .filter(Boolean)
+      .join(', ') || 'Not specified';
+
+    container.innerHTML = `
+      <h1 class="text-2xl font-bold mb-4">${title}</h1>
+      <p class="text-gray-600 mb-2">Law ID: ${law.law_id}</p>
+      <p class="text-gray-600 mb-2">Category: ${catNames}</p>
+      <p class="text-gray-600 mb-2">Publish Date: ${law.publish_date}</p>
+      <div class="mt-4 border p-4 rounded bg-white">${body}</div>
+    `;
+  }
+
+  window.onload = loadLawDetails;
+</script>
+
   </head>
   <body class="bg-gray-100 font-sans">
     <div class="max-w-4xl mx-auto p-6">
