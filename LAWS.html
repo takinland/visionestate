@@ -59,7 +59,6 @@
       const html = document.documentElement;
       const body = document.body;
       const searchInput = document.getElementById('search');
-      const yearSelect = document.getElementById('year');
 
       if (lang === 'fa') {
         html.setAttribute('dir', 'rtl');
@@ -70,33 +69,33 @@
       }
 
       searchInput.placeholder = labels[lang].search;
-
-      // تنظیم لیبل "همه سال‌ها"
-      if (yearSelect.firstChild) {
-        yearSelect.firstChild.textContent = labels[lang].allYears;
-      }
     }
 
     async function loadYears(lang) {
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/laws?select=year&order=year.desc`, {
-        headers: { apikey: API_KEY, Authorization: `Bearer ${API_KEY}` }
-      });
-      const data = await res.json();
-      const years = [...new Set(data.map(row => row.year))].filter(Boolean).sort((a, b) => b - a);
+      try {
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/laws?select=year&order=year.desc`, {
+          headers: { apikey: API_KEY, Authorization: `Bearer ${API_KEY}` }
+        });
+        const data = await res.json();
+        const years = [...new Set(data.map(row => row.year))].filter(y => y && !isNaN(y)).sort((a, b) => b - a);
 
-      const yearSelect = document.getElementById('year');
-      yearSelect.innerHTML = '';
-      const allOption = document.createElement('option');
-      allOption.value = '';
-      allOption.textContent = labels[lang].allYears;
-      yearSelect.appendChild(allOption);
+        const yearSelect = document.getElementById('year');
+        yearSelect.innerHTML = '';
+        const allOption = document.createElement('option');
+        allOption.value = '';
+        allOption.textContent = labels[lang].allYears;
+        yearSelect.appendChild(allOption);
 
-      years.forEach(y => {
-        const opt = document.createElement('option');
-        opt.value = y;
-        opt.textContent = y;
-        yearSelect.appendChild(opt);
-      });
+        years.forEach(y => {
+          const opt = document.createElement('option');
+          opt.value = y;
+          opt.textContent = y;
+          yearSelect.appendChild(opt);
+        });
+      } catch (err) {
+        console.error("خطا در loadYears():", err);
+        throw err;
+      }
     }
 
     async function loadCategories(lang) {
@@ -141,10 +140,7 @@
       container.innerHTML = '';
 
       laws
-        .filter(law => {
-          return (!selectedCat || (law.categories_original || []).includes(parseInt(selectedCat))) &&
-                 (!selectedYear || law.year == selectedYear);
-        })
+        .filter(law => (!selectedCat || (law.categories_original || []).includes(parseInt(selectedCat))) && (!selectedYear || law.year == selectedYear))
         .filter(law => {
           const title =
             lang === 'fa' ? law.title_fa :
@@ -192,7 +188,7 @@
         });
 
       if (container.innerHTML === '') {
-        container.innerHTML = '<p class="text-gray-500">نتیجه‌ای یافت نشد.</p>';
+        container.innerHTML = '<p class="text-red-500">خطا در بارگذاری داده‌ها.</p>';
       }
     }
 
@@ -204,10 +200,19 @@
       updateDirectionAndLabels(savedLang);
 
       setTimeout(() => {
-        Promise.all([
-          loadYears(savedLang),
-          loadCategories(savedLang)
-        ]).then(loadLaws);
+        loadYears(savedLang)
+          .then(() => {
+            console.log("✅ سال‌ها بارگذاری شدند.");
+            return loadCategories(savedLang);
+          })
+          .then(() => {
+            console.log("✅ دسته‌بندی‌ها بارگذاری شدند.");
+            loadLaws();
+          })
+          .catch(error => {
+            console.error("❌ خطای دقیق:", error);
+            document.getElementById('laws').innerHTML = '<p class="text-red-500">خطا در بارگذاری داده‌ها.</p>';
+          });
       }, 10);
 
       document.addEventListener('change', (e) => {
