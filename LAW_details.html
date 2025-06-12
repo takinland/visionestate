@@ -1,14 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Law Details</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
 </head>
-<body class="bg-gray-100 font-sans">
+<body class="bg-gray-50 font-sans">
   <div class="max-w-4xl mx-auto p-6">
-    <a href="LAWS.html" class="text-blue-600 underline mb-4 inline-block" id="back-link">Back to list</a>
+    <div class="flex items-center justify-between mb-4">
+      <a href="LAWS.html" class="text-blue-600 underline" id="back-link">Back to list</a>
+      <a id="pdf-download" href="#" class="bg-gray-900 text-white py-2 px-4 rounded-xl flex items-center gap-2" target="_blank" style="display: none">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4" />
+        </svg>
+        <span id="pdf-label">Download PDF</span>
+      </a>
+    </div>
     <div id="law-detail" class="bg-white p-6 rounded shadow"></div>
   </div>
 
@@ -17,10 +25,10 @@
     const API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRkdmltd3FvdG51dmNkdmh2YmpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkxMDY2MjcsImV4cCI6MjA2NDY4MjYyN30.CWNPk-S-ECq0c1LRugDJYOchY3mgC2Zchyr8X8-mDeE';
 
     const labels = {
-      en: { lawId: "Law ID:", category: "Category:", published: "Published:", back: "Back to list" },
-      fa: { lawId: "شناسه:", category: "دسته‌بندی:", published: "تاریخ انتشار:", back: "بازگشت به لیست" },
-      tr: { lawId: "Kanun No:", category: "Kategori:", published: "Yayın Tarihi:", back: "Listeye Dön" },
-      ru: { lawId: "ID закона:", category: "Категория:", published: "Дата публикации:", back: "Назад к списку" }
+      en: { lawId: "Law ID:", category: "Category:", published: "Published:", back: "Back to list", download: "Download PDF" },
+      fa: { lawId: "شناسه:", category: "دسته‌بندی:", published: "تاریخ انتشار:", back: "بازگشت به لیست", download: "دانلود PDF" },
+      tr: { lawId: "Kanun No:", category: "Kategori:", published: "Yayın Tarihi:", back: "Listeye Dön", download: "PDF indir" },
+      ru: { lawId: "ID закона:", category: "Категория:", published: "Дата публикации:", back: "Назад", download: "Скачать PDF" }
     };
 
     async function loadLawDetails() {
@@ -28,7 +36,6 @@
       const lawId = urlParams.get('id');
       const lang = urlParams.get('lang') || 'en';
 
-      // تنظیم جهت صفحه
       const html = document.documentElement;
       const body = document.body;
       if (lang === 'fa') {
@@ -41,9 +48,8 @@
 
       const t = labels[lang];
 
-      // تغییر متن لینک بازگشت
-      const backLink = document.getElementById('back-link');
-      backLink.textContent = t.back;
+      document.getElementById('back-link').textContent = t.back;
+      document.getElementById('pdf-label').textContent = t.download;
 
       if (!lawId) return;
 
@@ -59,38 +65,24 @@
       const laws = await lawRes.json();
       const categories = await catsRes.json();
       const law = laws[0];
-
       const container = document.getElementById('law-detail');
       if (!law) {
         container.innerHTML = '<p class="text-red-500">Law not found.</p>';
         return;
       }
 
-      const title =
-        lang === 'fa' ? law.title_fa :
-        lang === 'tr' ? law.title_original :
-        lang === 'ru' ? law.title_ru :
-        law.title_en;
+      const title = lang === 'fa' ? law.title_fa : lang === 'tr' ? law.title_original : lang === 'ru' ? law.title_ru : law.title_en;
+      const bodyText = lang === 'fa' ? law.body_fa : lang === 'tr' ? law.body_original : lang === 'ru' ? law.body_ru : law.body_en;
+      const catNames = (law.categories_original || []).map(id => {
+        const cat = categories.find(c => c.id === id);
+        if (!cat) return null;
+        return lang === 'fa' ? cat.name_fa : lang === 'tr' ? cat.name : lang === 'ru' ? cat.name_ru : cat.name_en;
+      }).filter(Boolean).join(', ') || 'Not specified';
 
-      const bodyText =
-        lang === 'fa' ? law.body_fa :
-        lang === 'tr' ? law.body_original :
-        lang === 'ru' ? law.body_ru :
-        law.body_en;
-
-      const catNames = (law.categories_original || [])
-        .map(id => {
-          const cat = categories.find(c => c.id === id);
-          if (!cat) return null;
-          return (
-            lang === 'fa' ? cat.name_fa :
-            lang === 'tr' ? cat.name :
-            lang === 'ru' ? cat.name_ru :
-            cat.name_en
-          );
-        })
-        .filter(Boolean)
-        .join(', ') || 'Not specified';
+      // تنظیم لینک PDF ترجمه‌شده
+      const pdfUrl = `/pdfs-translated/${lang}/${lawId}.pdf`;
+      document.getElementById('pdf-download').href = pdfUrl;
+      document.getElementById('pdf-download').style.display = 'inline-flex';
 
       container.innerHTML = `
         <h1 class="text-2xl font-bold mb-4">${title}</h1>
