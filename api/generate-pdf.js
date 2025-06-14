@@ -1,90 +1,79 @@
-const { createClient } = require('@supabase/supabase-js');
-const puppeteer = require('puppeteer');
+// File: /api/generate-pdf.js
+
+import puppeteer from "puppeteer";
+import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
-  'https://tdvimwqotnuvcdvhvbjj.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+  "https://tdvimwqotnuvcdvhvbjj.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRkdmltd3FvdG51dmNkdmh2YmpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkxMDY2MjcsImV4cCI6MjA2NDY4MjYyN30.CWNPk-S-ECq0c1LRugDJYOchY3mgC2Zchyr8X8-mDeE"
 );
 
-module.exports = async (req, res) => {
+export default async function handler(req, res) {
   const { id, lang } = req.query;
 
   if (!id || !lang) {
-    return res.status(400).send('Missing id or lang parameter');
+    return res.status(400).send("Missing id or lang");
   }
 
   const { data, error } = await supabase
-    .from('laws')
-    .select('*')
-    .eq('law_id', id)
+    .from("laws")
+    .select("law_id, title_en, title_fa, title_original, title_ru, pdf_text_en, pdf_text_fa, pdf_text_ru")
+    .eq("law_id", id)
     .single();
 
   if (error || !data) {
-    return res.status(404).send('Law not found');
+    return res.status(404).send("Law not found");
   }
 
-  const textField = lang === 'fa' ? 'pdf_text_fa' :
-                    lang === 'en' ? 'pdf_text_en' :
-                    lang === 'ru' ? 'pdf_text_ru' :
-                    'pdf_text_original';
+  const title =
+    lang === "fa"
+      ? data.title_fa
+      : lang === "ru"
+      ? data.title_ru
+      : lang === "tr"
+      ? data.title_original
+      : data.title_en;
 
-  const titleField = lang === 'fa' ? 'title_fa' :
-                     lang === 'en' ? 'title_en' :
-                     lang === 'ru' ? 'title_ru' :
-                     'title_original';
-
-  const title = data[titleField] || '';
-  const body = data[textField] || '';
-
-  // قالب HTML اولیه (راست‌چین برای فارسی)
-  const direction = lang === 'fa' || lang === 'ar' ? 'rtl' : 'ltr';
-  const fontFamily = lang === 'fa' ? `'Tahoma', sans-serif` : `'Arial', sans-serif`;
+  const body =
+    lang === "fa"
+      ? data.pdf_text_fa
+      : lang === "ru"
+      ? data.pdf_text_ru
+      : lang === "tr"
+      ? data.pdf_text_original
+      : data.pdf_text_en;
 
   const html = `
-    <!DOCTYPE html>
     <html lang="${lang}">
-      <head>
-        <meta charset="UTF-8" />
-        <style>
-          body {
-            direction: ${direction};
-            font-family: ${fontFamily};
-            padding: 40px;
-            line-height: 1.8;
-            font-size: 16px;
-            white-space: pre-line;
-          }
-          h1 {
-            font-size: 20px;
-            margin-bottom: 20px;
-          }
-        </style>
-      </head>
-      <body>
-        <h1>${title}</h1>
-        ${body}
-      </body>
+    <head>
+      <meta charset="UTF-8">
+      <style>
+        body { font-family: sans-serif; padding: 40px; line-height: 1.8; }
+        h1 { font-size: 24px; margin-bottom: 16px; }
+        .law-text { white-space: pre-line; }
+        html[lang="fa"] body { direction: rtl; font-family: Tahoma, sans-serif; }
+        html[lang="ru"] body { font-family: DejaVu Sans, sans-serif; }
+      </style>
+    </head>
+    <body>
+      <h1>${title}</h1>
+      <div class="law-text">${body}</div>
+    </body>
     </html>
   `;
 
-  // تولید PDF با puppeteer
-  const browser = await puppeteer.launch({
-    headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox'],
-  });
+  try {
+    const browser = await puppeteer.launch({ headless: "new" });
+    const page = await browser.newPage();
+    await page.setContent(html, { waitUntil: "networkidle0" });
+    const pdfBuffer = await page.pdf({ format: "A4" });
+    await browser.close();
 
-  const page = await browser.newPage();
-  await page.setContent(html, { waitUntil: 'load' });
-
-  const pdfBuffer = await page.pdf({
-    format: 'A4',
-    printBackground: true,
-  });
-
-  await browser.close();
-
-  // ارسال PDF به مرورگر کاربر
-  res.setHeader('Content-Type', 'application/pdf');
-  res.setHeader('Content-Disposition', `attachment; filename="${id}_${lang}.pdf"`);
-  res.send(pdfBuffer);
-};
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `attachment; filename=law-${id}-${lang}.pdf`);
+    res.send(pdfBuffer);
+  } catch (err) {
+    console.error("PDF generation error:", err);
+    res.status(500).send("Failed to generate PDF");
+  }
+}
