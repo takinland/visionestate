@@ -17,11 +17,7 @@
         <span id="pdf-label">Download PDF</span>
       </a>
     </div>
-
     <div id="law-detail" class="bg-white p-6 rounded shadow"></div>
-
-    <!-- 🔽 باکس پایین برای نمایش محتوای HTML فایل PDF ترجمه‌شده -->
-    <div id="pdf-html-box" class="bg-white p-6 mt-6 rounded shadow text-sm whitespace-pre-line border border-gray-300 overflow-auto" style="direction: ltr;"></div>
   </div>
 
   <script>
@@ -51,6 +47,7 @@
       }
 
       const t = labels[lang];
+
       document.getElementById('back-link').textContent = t.back;
       document.getElementById('pdf-label').textContent = t.download;
 
@@ -69,6 +66,7 @@
       const categories = await catsRes.json();
       const law = laws[0];
       const container = document.getElementById('law-detail');
+
       if (!law) {
         container.innerHTML = '<p class="text-red-500">Law not found.</p>';
         return;
@@ -76,30 +74,34 @@
 
       const title = lang === 'fa' ? law.title_fa : lang === 'tr' ? law.title_original : lang === 'ru' ? law.title_ru : law.title_en;
       const bodyText = lang === 'fa' ? law.body_fa : lang === 'tr' ? law.body_original : lang === 'ru' ? law.body_ru : law.body_en;
-      const pdfHtml = lang === 'fa' ? law.pdf_text_fa : lang === 'tr' ? law.pdf_text_original : lang === 'ru' ? law.pdf_text_ru : law.pdf_text_en;
+
       const catNames = (law.categories_original || []).map(id => {
         const cat = categories.find(c => c.id === id);
         if (!cat) return null;
         return lang === 'fa' ? cat.name_fa : lang === 'tr' ? cat.name : lang === 'ru' ? cat.name_ru : cat.name_en;
       }).filter(Boolean).join(', ') || 'Not specified';
 
-      // PDF download link
+      // لینک PDF
       const pdfUrl = `/pdfs-translated/${lang}/${lawId}.pdf`;
       document.getElementById('pdf-download').href = pdfUrl;
       document.getElementById('pdf-download').style.display = 'inline-flex';
 
-      // اطلاعات اصلی قانون
+      // ساخت بدنه اصلی
       container.innerHTML = `
         <h1 class="text-2xl font-bold mb-4">${title}</h1>
         <p class="text-gray-600 mb-2"><strong>${t.lawId}</strong> ${law.law_id}</p>
         <p class="text-gray-600 mb-2"><strong>${t.category}</strong> ${catNames}</p>
         <p class="text-gray-600 mb-4"><strong>${t.published}</strong> ${law.publish_date}</p>
-        <div class="border p-4 rounded bg-gray-50 whitespace-pre-line">${bodyText}</div>
       `;
 
-      // محتوای HTML آماده‌شده برای PDF
-      const previewBox = document.getElementById('pdf-html-box');
-      previewBox.innerHTML = pdfHtml;
+      // نمایش محتوای کامل HTML
+      const contentBox = document.createElement('div');
+      contentBox.className = 'border p-4 rounded bg-white mt-6';
+      contentBox.innerHTML = lang === 'fa' ? law.pdf_text_fa :
+                              lang === 'tr' ? law.pdf_text_original :
+                              lang === 'ru' ? law.pdf_text_ru :
+                                              law.pdf_text_en;
+      container.appendChild(contentBox);
     }
 
     window.onload = loadLawDetails;
