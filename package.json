@@ -1,0 +1,7 @@
+{
+  "type": "module",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.6",
+    "puppeteer": "^21.3.8"
+  }
+}
