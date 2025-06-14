@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Law Details</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
 </head>
@@ -72,25 +72,19 @@
       }
 
       const title = lang === 'fa' ? law.title_fa : lang === 'tr' ? law.title_original : lang === 'ru' ? law.title_ru : law.title_en;
-      const bodyText = lang === 'fa' ? law.body_fa : lang === 'tr' ? law.body_original : lang === 'ru' ? law.body_ru : law.body_en;
+      const htmlBody = lang === 'fa' ? law.pdf_text_fa : lang === 'tr' ? law.pdf_text_original : lang === 'ru' ? law.pdf_text_ru : law.pdf_text_en;
       const catNames = (law.categories_original || []).map(id => {
         const cat = categories.find(c => c.id === id);
         if (!cat) return null;
         return lang === 'fa' ? cat.name_fa : lang === 'tr' ? cat.name : lang === 'ru' ? cat.name_ru : cat.name_en;
       }).filter(Boolean).join(', ') || 'Not specified';
 
-      // تنظیم لینک PDF ترجمه‌شده
       const pdfUrl = `/pdfs-translated/${lang}/${lawId}.pdf`;
       document.getElementById('pdf-download').href = pdfUrl;
       document.getElementById('pdf-download').style.display = 'inline-flex';
 
-      container.innerHTML = `
-        <h1 class="text-2xl font-bold mb-4">${title}</h1>
-        <p class="text-gray-600 mb-2"><strong>${t.lawId}</strong> ${law.law_id}</p>
-        <p class="text-gray-600 mb-2"><strong>${t.category}</strong> ${catNames}</p>
-        <p class="text-gray-600 mb-4"><strong>${t.published}</strong> ${law.publish_date}</p>
-        <div class="border p-4 rounded bg-gray-50 whitespace-pre-line">${bodyText}</div>
-      `;
+      // نمایش HTML کامل در خروجی
+      container.innerHTML = htmlBody;
     }
 
     window.onload = loadLawDetails;
