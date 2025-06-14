@@ -149,7 +149,7 @@
             law.title_en;
           return title?.toLowerCase().includes(search);
         })
-        .sort((a, b) => (a.law_id || '').localeCompare(b.law_id || ''))  // ✅ مرتب‌سازی بر اساس law_id
+        .sort((a, b) => (b.law_id || '').localeCompare(a.law_id || ''))   // ✅ مرتب‌سازی بر اساس law_id
         .forEach(law => {
           const title =
             lang === 'fa' ? law.title_fa :
