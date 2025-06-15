@@ -122,7 +122,7 @@ doc.close();
       doc.close();
 
       // تنظیم لینک PDF
-      const pdfUrl = `/api/generate-pdf.js?id=${lawId}&lang=${lang}`;
+      const pdfUrl = `https://visionestate.vercel.app/api/generate-pdf.js?id=${lawId}&lang=${lang}`;
       document.getElementById('pdf-download').href = pdfUrl;
       document.getElementById('pdf-download').style.display = 'inline-flex';
     }
