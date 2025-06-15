@@ -1,137 +1,108 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fa">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Law Details</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"/>
 </head>
-<body class="bg-gray-50 font-sans">
+<body class="bg-gray-50 font-sans text-right">
+
   <div class="max-w-4xl mx-auto p-6">
-    <div class="flex flex-col md:flex-row items-center justify-between mb-4 gap-4">
-      <a href="LAWS.html" class="text-blue-600 underline" id="back-link">Back to list</a>
+    <div class="flex items-center justify-between mb-4">
+      <a href="LAWS.html" class="text-blue-600 underline" id="back-link">بازگشت به لیست</a>
+
       <div class="flex items-center gap-2">
-        <span id="view-label">View:</span>
-        <select id="view-toggle" class="border p-2 rounded">
+        <label class="text-sm text-gray-700">نمایش:</label>
+        <select id="view-mode" class="border p-1 rounded">
           <option value="html">Extracted HTML Text</option>
-          <option value="pdf">Translated PDF View</option>
+          <option value="translated">Translated PDF Text</option>
         </select>
       </div>
-      <a id="pdf-download" href="#" class="bg-gray-900 text-white py-2 px-4 rounded-xl flex items-center gap-2" target="_blank" style="display: none">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4" />
-        </svg>
-        <span id="pdf-label">Download PDF</span>
-      </a>
     </div>
-    <div id="law-detail" class="bg-white p-6 rounded shadow"></div>
+
+    <div id="law-detail" class="bg-white p-6 rounded shadow text-sm leading-relaxed">
+      <p class="text-gray-500">در حال بارگذاری...</p>
+    </div>
   </div>
 
   <script>
     const SUPABASE_URL = 'https://tdvimwqotnuvcdvhvbjj.supabase.co';
-    const API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'; // کلید صحیح شما
-
-    const labels = {
-      en: { lawId: "Law ID:", category: "Category:", published: "Published:", back: "Back to list", download: "Download PDF", view: "View:" },
-      fa: { lawId: "شناسه:", category: "دسته‌بندی:", published: "تاریخ انتشار:", back: "بازگشت به لیست", download: "دانلود PDF", view: "نمایش:" },
-      tr: { lawId: "Kanun No:", category: "Kategori:", published: "Yayın Tarihi:", back: "Listeye Dön", download: "PDF indir", view: "Görünüm:" },
-      ru: { lawId: "ID закона:", category: "Категория:", published: "Дата публикации:", back: "Назад", download: "Скачать PDF", view: "Режим:" }
-    };
+    const API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5...'; // مطمئن شو معتبر است
 
     async function loadLawDetails() {
       const urlParams = new URLSearchParams(window.location.search);
       const lawId = urlParams.get('id');
       const lang = urlParams.get('lang') || 'en';
 
-      const html = document.documentElement;
-      const body = document.body;
-      if (lang === 'fa') {
-        html.setAttribute('dir', 'rtl');
-        body.classList.add('text-right');
-      } else {
-        html.setAttribute('dir', 'ltr');
-        body.classList.remove('text-right');
-      }
-
-      const t = labels[lang];
-      document.getElementById('back-link').textContent = t.back;
-      document.getElementById('pdf-label').textContent = t.download;
-      document.getElementById('view-label').textContent = t.view;
-
-      const viewToggle = document.getElementById('view-toggle');
-      viewToggle.addEventListener('change', () => renderView(viewToggle.value));
-
-      if (!lawId) return;
-
-      const [lawRes, catsRes] = await Promise.all([
-        fetch(`${SUPABASE_URL}/rest/v1/laws?law_id=eq.${lawId}&select=*`, {
-          headers: { apikey: API_KEY, Authorization: `Bearer ${API_KEY}` }
-        }),
-        fetch(`${SUPABASE_URL}/rest/v1/law_categories`, {
-          headers: { apikey: API_KEY, Authorization: `Bearer ${API_KEY}` }
-        })
-      ]);
-
-      const laws = await lawRes.json();
-      const categories = await catsRes.json();
-      const law = laws[0];
+      const viewMode = document.getElementById('view-mode');
       const container = document.getElementById('law-detail');
-      if (!law) {
-        container.innerHTML = '<p class="text-red-500">Law not found.</p>';
+
+      if (!lawId) {
+        container.innerHTML = '<p class="text-red-500">❌ lawId یافت نشد.</p>';
         return;
       }
 
-      const title = lang === 'fa' ? law.title_fa : lang === 'tr' ? law.title_original : lang === 'ru' ? law.title_ru : law.title_en;
-      const catNames = (law.categories_original || []).map(id => {
-        const cat = categories.find(c => c.id === id);
-        return cat ? (lang === 'fa' ? cat.name_fa : lang === 'tr' ? cat.name : lang === 'ru' ? cat.name_ru : cat.name_en) : null;
-      }).filter(Boolean).join(', ') || 'Not specified';
+      try {
+        console.log("🔎 lawId =", lawId);
 
-      // محتوای ثابت بالا
-      container.innerHTML = `
-        <h1 class="text-2xl font-bold mb-4">${title}</h1>
-        <p class="text-gray-600 mb-2"><strong>${t.lawId}</strong> ${law.law_id}</p>
-        <p class="text-gray-600 mb-2"><strong>${t.category}</strong> ${catNames}</p>
-        <p class="text-gray-600 mb-4"><strong>${t.published}</strong> ${law.publish_date}</p>
-        <div id="law-content"></div>
-      `;
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/laws?law_id=eq.${lawId}&select=*`, {
+          headers: {
+            apikey: API_KEY,
+            Authorization: `Bearer ${API_KEY}`
+          }
+        });
 
-      // تابع رندر محتوای متغیر
-      function renderView(mode) {
-        const contentDiv = document.getElementById('law-content');
-        contentDiv.innerHTML = ''; // پاک‌سازی
-        if (mode === 'pdf') {
+        const data = await res.json();
+        console.log("📦 laws =", data);
+
+        if (!data.length) {
+          container.innerHTML = '<p class="text-red-500">❌ قانون یافت نشد.</p>';
+          return;
+        }
+
+        const law = data[0];
+
+        const langText = {
+          fa: law.body_fa,
+          en: law.body_en,
+          ru: law.body_ru,
+          tr: law.body_original
+        };
+
+        const translatedText = {
+          fa: law.pdf_text_fa,
+          en: law.pdf_text_en,
+          ru: law.pdf_text_ru,
+          tr: law.pdf_text_original
+        };
+
+        const renderContent = () => {
+          const selected = viewMode.value;
+          const html = selected === 'html' ? langText[lang] : translatedText[lang];
+
+          if (!html) {
+            container.innerHTML = '<p class="text-red-500">❌ محتوایی برای این زبان یافت نشد.</p>';
+            return;
+          }
+
           const iframe = document.createElement('iframe');
-          iframe.className = 'w-full border rounded bg-white mt-4';
-          iframe.style.minHeight = '400px';
-          iframe.style.border = '1px solid #ccc';
-          contentDiv.appendChild(iframe);
-
+          iframe.className = 'w-full h-96 border rounded mt-4';
           const doc = iframe.contentDocument || iframe.contentWindow.document;
           doc.open();
-          doc.write(
-            lang === 'fa' ? law.pdf_text_fa :
-            lang === 'tr' ? law.pdf_text_original :
-            lang === 'ru' ? law.pdf_text_ru :
-                            law.pdf_text_en
-          );
+          doc.write(html);
           doc.close();
-        } else {
-          const bodyText =
-            lang === 'fa' ? law.body_fa :
-            lang === 'tr' ? law.body_original :
-            lang === 'ru' ? law.body_ru :
-                            law.body_en;
-          const div = document.createElement('div');
-          div.className = "whitespace-pre-line mt-4 text-gray-800";
-          div.innerText = bodyText || '(No content)';
-          contentDiv.appendChild(div);
-        }
-      }
 
-      renderView(viewToggle.value); // نمایش پیش‌فرض
-      document.getElementById('pdf-download').href = `/pdfs-translated/${lang}/${lawId}.pdf`;
-      document.getElementById('pdf-download').style.display = 'inline-flex';
+          container.innerHTML = '';
+          container.appendChild(iframe);
+        };
+
+        viewMode.onchange = renderContent;
+        renderContent();
+
+      } catch (err) {
+        console.error("❌ Fetch error:", err);
+        container.innerHTML = '<p class="text-red-500">خطا در بارگذاری اطلاعات.</p>';
+      }
     }
 
     window.onload = loadLawDetails;
