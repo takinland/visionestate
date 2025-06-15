@@ -85,24 +85,28 @@
         <p class="text-gray-600 mb-4"><strong>${t.published}</strong> ${law.publish_date}</p>
       `;
 
-   // افزودن Iframe برای نمایش Body HTML-style
-const iframe = document.createElement('iframe');
-iframe.className = 'w-full border rounded bg-white mt-4';
-iframe.style.minHeight = '400px';
-iframe.style.border = '1px solid #ccc';
+      // افزودن Iframe برای نمایش body با حفظ خط و بولت
+      const iframe = document.createElement('iframe');
+      iframe.className = 'w-full border rounded bg-white mt-4';
+      iframe.style.minHeight = '400px';
+      iframe.style.border = '1px solid #ccc';
+      container.appendChild(iframe);
 
-container.appendChild(iframe);
-
-const doc = iframe.contentDocument || iframe.contentWindow.document;
-doc.open();
-doc.write(
-  lang === 'fa' ? law.body_fa :
-  lang === 'tr' ? law.body_original :
-  lang === 'ru' ? law.body_ru :
-                  law.body_en
-);
-doc.close();
-
+      const doc = iframe.contentDocument || iframe.contentWindow.document;
+      doc.open();
+      doc.write(
+        '<div style="white-space:pre-line; font-family:sans-serif; line-height:1.6;">' +
+        (
+          lang === 'fa' ? law.body_fa :
+          lang === 'tr' ? law.body_original :
+          lang === 'ru' ? law.body_ru :
+                          law.body_en
+        )
+        .replace(/•/g, '• ')    // فاصله پس از بولت
+        .replace(/\n/g, '<br>') // حفظ خط جدید
+        + '</div>'
+      );
+      doc.close();
 
       // تنظیم لینک PDF
       const pdfUrl = `/pdfs-translated/${lang}/${lawId}.pdf`;
