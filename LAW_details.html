@@ -85,23 +85,24 @@
         <p class="text-gray-600 mb-4"><strong>${t.published}</strong> ${law.publish_date}</p>
       `;
 
-      // افزودن Iframe برای نمایش PDF HTML-style
-      const iframe = document.createElement('iframe');
-      iframe.className = 'w-full border rounded bg-white mt-4';
-      iframe.style.minHeight = '400px';
-      iframe.style.border = '1px solid #ccc';
+   // افزودن Iframe برای نمایش Body HTML-style
+const iframe = document.createElement('iframe');
+iframe.className = 'w-full border rounded bg-white mt-4';
+iframe.style.minHeight = '400px';
+iframe.style.border = '1px solid #ccc';
 
-      container.appendChild(iframe);
+container.appendChild(iframe);
 
-      const doc = iframe.contentDocument || iframe.contentWindow.document;
-      doc.open();
-      doc.write(
-        lang === 'fa' ? law.pdf_text_fa :
-        lang === 'tr' ? law.pdf_text_original :
-        lang === 'ru' ? law.pdf_text_ru :
-                        law.pdf_text_en
-      );
-      doc.close();
+const doc = iframe.contentDocument || iframe.contentWindow.document;
+doc.open();
+doc.write(
+  lang === 'fa' ? law.body_fa :
+  lang === 'tr' ? law.body_original :
+  lang === 'ru' ? law.body_ru :
+                  law.body_en
+);
+doc.close();
+
 
       // تنظیم لینک PDF
       const pdfUrl = `/pdfs-translated/${lang}/${lawId}.pdf`;
