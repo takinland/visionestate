@@ -32,9 +32,11 @@
     };
 
     async function loadLawDetails() {
-      const urlParams = new URLSearchParams(window.location.search);
-      const lawId = urlParams.get('id');
-      const lang = urlParams.get('lang') || 'en';
+    // تنظیم لینک دانلود PDF اصلی از منبع رسمی
+const pdfUrl = law.pdf_url_source;
+document.getElementById('pdf-download').href = pdfUrl;
+document.getElementById('pdf-download').style.display = 'inline-flex';
+
 
       const html = document.documentElement;
       const body = document.body;
