@@ -32,11 +32,9 @@
     };
 
     async function loadLawDetails() {
-    // تنظیم لینک دانلود PDF اصلی از منبع رسمی
-const pdfUrl = law.pdf_url_source;
-document.getElementById('pdf-download').href = pdfUrl;
-document.getElementById('pdf-download').style.display = 'inline-flex';
-
+      const urlParams = new URLSearchParams(window.location.search);
+      const lawId = urlParams.get('id');
+      const lang = urlParams.get('lang') || 'en';
 
       const html = document.documentElement;
       const body = document.body;
@@ -72,6 +70,11 @@ document.getElementById('pdf-download').style.display = 'inline-flex';
         return;
       }
 
+      // ✅ تنظیم لینک دانلود PDF از منبع رسمی
+      const pdfUrl = law.pdf_url_source;
+      document.getElementById('pdf-download').href = pdfUrl;
+      document.getElementById('pdf-download').style.display = 'inline-flex';
+
       const title = lang === 'fa' ? law.title_fa : lang === 'tr' ? law.title_original : lang === 'ru' ? law.title_ru : law.title_en;
       const catNames = (law.categories_original || []).map(id => {
         const cat = categories.find(c => c.id === id);
@@ -79,7 +82,6 @@ document.getElementById('pdf-download').style.display = 'inline-flex';
         return lang === 'fa' ? cat.name_fa : lang === 'tr' ? cat.name : lang === 'ru' ? cat.name_ru : cat.name_en;
       }).filter(Boolean).join(', ') || 'Not specified';
 
-      // نمایش مشخصات بالا
       container.innerHTML = `
         <h1 class="text-2xl font-bold mb-4">${title}</h1>
         <p class="text-gray-600 mb-2"><strong>${t.lawId}</strong> ${law.law_id}</p>
@@ -87,7 +89,6 @@ document.getElementById('pdf-download').style.display = 'inline-flex';
         <p class="text-gray-600 mb-4"><strong>${t.published}</strong> ${law.publish_date}</p>
       `;
 
-      // افزودن Iframe برای نمایش body با حفظ خط و بولت
       const iframe = document.createElement('iframe');
       iframe.className = 'w-full border rounded bg-white mt-4';
       iframe.style.minHeight = '400px';
@@ -95,38 +96,29 @@ document.getElementById('pdf-download').style.display = 'inline-flex';
       container.appendChild(iframe);
 
       const doc = iframe.contentDocument || iframe.contentWindow.document;
+      const rawText = (
+        lang === 'fa' ? law.body_fa :
+        lang === 'tr' ? law.body_original :
+        lang === 'ru' ? law.body_ru :
+        law.body_en
+      );
+
+      const htmlLines = rawText
+        .split('\n')
+        .map(line => {
+          const clean = line.trim();
+          if (!clean) return '';
+          if (clean.startsWith('•')) {
+            return `<div style="margin: 0 0 8px;">${clean}</div>`;
+          } else {
+            return `<div style="margin: 0 0 8px; padding-left: 1em; color: #444;">${clean}</div>`;
+          }
+        })
+        .join('');
+
       doc.open();
-    const rawText = (
-  lang === 'fa' ? law.body_fa :
-  lang === 'tr' ? law.body_original :
-  lang === 'ru' ? law.body_ru :
-                  law.body_en
-);
-
-// تبدیل متن ساده به نمایش HTML بدون برگرداندن HTML اولیه
-const htmlLines = rawText
-  .split('\n')
-  .map(line => {
-    const clean = line.trim();
-    if (!clean) return '';
-    if (clean.startsWith('•')) {
-      return `<div style="margin: 0 0 8px;">${clean}</div>`;
-    } else {
-      return `<div style="margin: 0 0 8px; padding-left: 1em; color: #444;">${clean}</div>`;
-    }
-  })
-  .join('');
-
-doc.open();
-doc.write(`<div style="font-family: sans-serif; line-height: 1.8;">${htmlLines}</div>`);
-doc.close();
-
+      doc.write(`<div style="font-family: sans-serif; line-height: 1.8;">${htmlLines}</div>`);
       doc.close();
-
-      // تنظیم لینک PDF
-      const pdfUrl = `https://visionestate.vercel.app/api/generate-pdf.js?id=${lawId}&lang=${lang}`;
-      document.getElementById('pdf-download').href = pdfUrl;
-      document.getElementById('pdf-download').style.display = 'inline-flex';
     }
 
     window.onload = loadLawDetails;
