@@ -94,18 +94,31 @@
 
       const doc = iframe.contentDocument || iframe.contentWindow.document;
       doc.open();
-      doc.write(
-        '<div style="white-space:pre-line; font-family:sans-serif; line-height:1.6;">' +
-        (
-          lang === 'fa' ? law.body_fa :
-          lang === 'tr' ? law.body_original :
-          lang === 'ru' ? law.body_ru :
-                          law.body_en
-        )
-        .replace(/•/g, '• ')    // فاصله پس از بولت
-        .replace(/\n/g, '<br>') // حفظ خط جدید
-        + '</div>'
-      );
+    const rawText = (
+  lang === 'fa' ? law.body_fa :
+  lang === 'tr' ? law.body_original :
+  lang === 'ru' ? law.body_ru :
+                  law.body_en
+);
+
+// تبدیل متن ساده به نمایش HTML بدون برگرداندن HTML اولیه
+const htmlLines = rawText
+  .split('\n')
+  .map(line => {
+    const clean = line.trim();
+    if (!clean) return '';
+    if (clean.startsWith('•')) {
+      return `<div style="margin: 0 0 8px;">${clean}</div>`;
+    } else {
+      return `<div style="margin: 0 0 8px; padding-left: 1em; color: #444;">${clean}</div>`;
+    }
+  })
+  .join('');
+
+doc.open();
+doc.write(`<div style="font-family: sans-serif; line-height: 1.8;">${htmlLines}</div>`);
+doc.close();
+
       doc.close();
 
       // تنظیم لینک PDF
