@@ -17,12 +17,22 @@
         <span id="pdf-label">Download PDF</span>
       </a>
     </div>
+
+    <!-- Toggle -->
+    <div class="flex items-center mb-4">
+      <label for="toggleSource" class="mr-2 font-medium text-gray-700">View:</label>
+      <select id="toggleSource" class="border rounded px-2 py-1">
+        <option value="body">Extracted HTML Text</option>
+        <option value="pdf">Translated PDF Text</option>
+      </select>
+    </div>
+
     <div id="law-detail" class="bg-white p-6 rounded shadow"></div>
   </div>
 
   <script>
     const SUPABASE_URL = 'https://tdvimwqotnuvcdvhvbjj.supabase.co';
-    const API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRkdmltd3FvdG51dmNkdmh2YmpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkxMDY2MjcsImV4cCI6MjA2NDY4MjYyN30.CWNPk-S-ECq0c1LRugDJYOchY3mgC2Zchyr8X8-mDeE';
+    const API_KEY = 'YOUR_SUPABASE_API_KEY'; // 🔐 جایگزین کن با کلید مناسب
 
     const labels = {
       en: { lawId: "Law ID:", category: "Category:", published: "Published:", back: "Back to list", download: "Download PDF" },
@@ -65,6 +75,7 @@
       const categories = await catsRes.json();
       const law = laws[0];
       const container = document.getElementById('law-detail');
+
       if (!law) {
         container.innerHTML = '<p class="text-red-500">Law not found.</p>';
         return;
@@ -77,7 +88,7 @@
         return lang === 'fa' ? cat.name_fa : lang === 'tr' ? cat.name : lang === 'ru' ? cat.name_ru : cat.name_en;
       }).filter(Boolean).join(', ') || 'Not specified';
 
-      // نمایش مشخصات بالا
+      // نمایش مشخصات
       container.innerHTML = `
         <h1 class="text-2xl font-bold mb-4">${title}</h1>
         <p class="text-gray-600 mb-2"><strong>${t.lawId}</strong> ${law.law_id}</p>
@@ -85,23 +96,41 @@
         <p class="text-gray-600 mb-4"><strong>${t.published}</strong> ${law.publish_date}</p>
       `;
 
-      // افزودن Iframe برای نمایش PDF HTML-style
       const iframe = document.createElement('iframe');
       iframe.className = 'w-full border rounded bg-white mt-4';
       iframe.style.minHeight = '400px';
       iframe.style.border = '1px solid #ccc';
-
       container.appendChild(iframe);
 
-      const doc = iframe.contentDocument || iframe.contentWindow.document;
-      doc.open();
-      doc.write(
-        lang === 'fa' ? law.pdf_text_fa :
-        lang === 'tr' ? law.pdf_text_original :
-        lang === 'ru' ? law.pdf_text_ru :
-                        law.pdf_text_en
-      );
-      doc.close();
+      const updateIframeContent = () => {
+        const viewMode = document.getElementById('toggleSource').value;
+        const doc = iframe.contentDocument || iframe.contentWindow.document;
+        doc.open();
+        if (viewMode === 'body') {
+          doc.write(
+            `<pre style="white-space: pre-wrap; font-family: sans-serif;">${
+              lang === 'fa' ? law.body_fa :
+              lang === 'tr' ? law.body_original :
+              lang === 'ru' ? law.body_ru :
+                              law.body_en
+            }</pre>`
+          );
+        } else {
+          doc.write(
+            lang === 'fa' ? law.pdf_text_fa :
+            lang === 'tr' ? law.pdf_text_original :
+            lang === 'ru' ? law.pdf_text_ru :
+                            law.pdf_text_en
+          );
+        }
+        doc.close();
+      };
+
+      // تنظیم اولیه
+      updateIframeContent();
+
+      // واکنش به سوییچ
+      document.getElementById('toggleSource').addEventListener('change', updateIframeContent);
 
       // تنظیم لینک PDF
       const pdfUrl = `/pdfs-translated/${lang}/${lawId}.pdf`;
