@@ -70,7 +70,6 @@
         return;
       }
 
-      // ✅ تنظیم لینک دانلود PDF از منبع رسمی
       const pdfUrl = law.pdf_url_source;
       document.getElementById('pdf-download').href = pdfUrl;
       document.getElementById('pdf-download').style.display = 'inline-flex';
@@ -116,8 +115,12 @@
         })
         .join('');
 
+      const faStyle = lang === 'fa'
+        ? 'text-align: right; font-family: Tahoma, "IRANSans", "Vazir", sans-serif; font-weight: normal; direction: rtl;'
+        : 'text-align: left;';
+
       doc.open();
-      doc.write(`<div style="font-family: sans-serif; line-height: 1.8;">${htmlLines}</div>`);
+      doc.write(`<div style="${faStyle} line-height: 1.8;">${htmlLines}</div>`);
       doc.close();
     }
 
