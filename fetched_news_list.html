@@ -92,7 +92,7 @@
             <td class="p-2">${index + 1}</td>
             <td class="p-2">${item.name_original}</td>
             <td class="p-2">${item.country}</td>
-            <td class="p-2">${item.language_sup}</td>
+            <td class="p-2">\${item.language_sup || '-'}</td>
             <td class="p-2">
               <button class="text-red-600" onclick="deleteRecord(${item.id})">Delete</button>
             </td>
