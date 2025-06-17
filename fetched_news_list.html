@@ -6,17 +6,79 @@
   <title>News Sources Management</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
   <script src="https://unpkg.com/@supabase/supabase-js"></script>
+</head>
+<body class="bg-gray-100 p-6 font-sans">
+  <div class="max-w-5xl mx-auto">
+    <h1 class="text-2xl font-bold mb-4">News Sources</h1>
+
+    <div class="mb-4">
+      <button onclick="changeLanguage('en')" class="px-2">EN</button>
+      <button onclick="changeLanguage('fa')" class="px-2">FA</button>
+      <button onclick="changeLanguage('tr')" class="px-2">TR</button>
+      <button onclick="changeLanguage('ru')" class="px-2">RU</button>
+    </div>
+
+    <div class="mb-6">
+      <table class="w-full text-left border" id="news-table">
+        <thead>
+          <tr class="bg-gray-200">
+            <th class="p-2">#</th>
+            <th class="p-2">Name</th>
+            <th class="p-2">Country</th>
+            <th class="p-2">Languages</th>
+            <th class="p-2">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="news-table-body"></tbody>
+      </table>
+    </div>
+
+    <form onsubmit="saveRecord(); return false;" class="bg-white p-4 rounded shadow">
+      <h2 class="text-lg font-bold mb-4">Add / Edit Source</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label for="name_original">Name</label>
+          <input id="name_original" type="text" class="border p-2 w-full" required />
+        </div>
+        <div>
+          <label for="website_url">Website URL</label>
+          <input id="website_url" type="url" class="border p-2 w-full" required />
+        </div>
+        <div>
+          <label for="rss_url">RSS URL</label>
+          <input id="rss_url" type="url" class="border p-2 w-full" />
+        </div>
+        <div>
+          <label for="country">Country</label>
+          <input id="country" type="text" class="border p-2 w-full" />
+        </div>
+        <div>
+          <label for="languages">Languages (comma-separated)</label>
+          <input id="languages" type="text" class="border p-2 w-full" placeholder="en,fa" />
+        </div>
+        <div>
+          <label for="source_type">Type</label>
+          <select id="source_type" class="border p-2 w-full">
+            <option value="gov">Gov</option>
+            <option value="private">Private</option>
+            <option value="economic">Economic</option>
+          </select>
+        </div>
+      </div>
+      <div class="mt-4">
+        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Save</button>
+      </div>
+    </form>
+  </div>
+
   <script>
     const SUPABASE_URL = 'https://tdvimwqotnuvcdvhvbjj.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRkdmltd3FvdG51dmNkdmh2YmpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkxMDY2MjcsImV4cCI6MjA2NDY4MjYyN30.CWNPk-S-ECq0c1LRugDJYOchY3mgC2Zchyr8X8-mDeE'; // 🔒 جایگزین کن با کلید واقعی فقط در محیط امن
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRkdmltd3FvdG51dmNkdmh2YmpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkxMDY2MjcsImV4cCI6MjA2NDY4MjYyN30.CWNPk-S-ECq0c1LRugDJYOchY3mgC2Zchyr8X8-mDeE';
     const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     function changeLanguage(lang) {
       document.documentElement.lang = lang;
       document.body.dir = (lang === 'fa') ? 'rtl' : 'ltr';
-      document.querySelectorAll('[data-lang]').forEach(el => {
-        el.style.display = el.getAttribute('data-lang') === lang ? 'block' : 'none';
-      });
     }
 
     async function fetchNewsSources() {
@@ -32,21 +94,11 @@
             <td class="p-2">${item.country}</td>
             <td class="p-2">${item.languages}</td>
             <td class="p-2">
-              <button class="text-blue-600" onclick="editRecord(${item.id})">Edit</button>
-              <button class="text-red-600 ml-2" onclick="deleteRecord(${item.id})">Delete</button>
+              <button class="text-red-600" onclick="deleteRecord(${item.id})">Delete</button>
             </td>
           </tr>`;
       });
     }
-
-    async function deleteRecord(id) {
-      if (confirm('Are you sure to delete this record?')) {
-        await supabase.from('news_sources').delete().eq('id', id);
-        fetchNewsSources();
-      }
-    }
-
-    window.onload = fetchNewsSources;
 
     async function saveRecord() {
       const record = {
@@ -55,16 +107,22 @@
         rss_url: document.getElementById('rss_url').value,
         country: document.getElementById('country').value,
         languages: document.getElementById('languages').value,
-        source_type: document.getElementById('source_type').value
+        type: document.getElementById('source_type').value
       };
       const { error } = await supabase.from('news_sources').insert([record]);
       if (error) return alert('Insert error: ' + error.message);
-      fetchNewsSources();
       alert('Saved!');
+      fetchNewsSources();
     }
+
+    async function deleteRecord(id) {
+      if (confirm('Are you sure?')) {
+        await supabase.from('news_sources').delete().eq('id', id);
+        fetchNewsSources();
+      }
+    }
+
+    window.onload = fetchNewsSources;
   </script>
-</head>
-<body class="bg-gray-100 p-6 font-sans">
-  <!-- باقی محتوا بدون تغییر -->
 </body>
 </html>
