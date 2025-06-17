@@ -122,7 +122,19 @@
       }
     }
 
-    window.onload = fetchNewsSources;
+    window.onload = async () => {
+  const testDiv = document.createElement('div');
+  testDiv.className = "bg-yellow-100 text-yellow-800 p-2 mb-4 rounded";
+  try {
+    const { data, error } = await supabase.from('news_sources').select('id, name_original');
+    if (error) throw error;
+    testDiv.textContent = `✅ Connected to Supabase. Found ${data.length} records.`;
+  } catch (e) {
+    testDiv.textContent = `❌ Connection failed: ${e.message}`;
+  }
+  document.body.prepend(testDiv);
+  fetchNewsSources();
+};
   </script>
 </body>
 </html>
