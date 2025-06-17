@@ -53,8 +53,8 @@
           <input id="country" type="text" class="border p-2 w-full" />
         </div>
         <div>
-          <label for="language_supported">Languages (comma-separated)</label>
-          <input id="language_supported" type="text" class="border p-2 w-full" placeholder="en,fa" />
+          <label for="language_sup">Languages (comma-separated)</label>
+          <input id="language_sup" type="text" class="border p-2 w-full" placeholder="en,fa" />
         </div>
         <div>
           <label for="source_type">Type</label>
@@ -92,7 +92,7 @@
             <td class="p-2">${index + 1}</td>
             <td class="p-2">${item.name_original}</td>
             <td class="p-2">${item.country}</td>
-            <td class="p-2">${item.language_supported}</td>
+            <td class="p-2">${item.language_sup}</td>
             <td class="p-2">
               <button class="text-red-600" onclick="deleteRecord(${item.id})">Delete</button>
             </td>
@@ -106,7 +106,7 @@
         website_url: document.getElementById('website_url').value,
         rss_url: document.getElementById('rss_url').value,
         country: document.getElementById('country').value,
-        language_supported: document.getElementById('language_supported').value,
+        language_sup: document.getElementById('language_sup').value,
         type: document.getElementById('source_type').value
       };
       const { error } = await supabase.from('news_sources').insert([record]);
