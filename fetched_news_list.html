@@ -5,7 +5,50 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>News Sources Management</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
-  <script src="https://unpkg.com/@supabase/supabase-js"></script>
+  <script src="https://unpkg.com/@supabase/supabase-js">let allData = [];
+let currentPage = 1;
+const pageSize = 10;
+
+function renderPagination(totalCount) {
+  const totalPages = Math.ceil(totalCount / pageSize);
+  const paginationDiv = document.getElementById('pagination');
+  paginationDiv.innerHTML = '';
+
+  if (totalPages <= 1) return;
+
+  const prevBtn = document.createElement('button');
+  prevBtn.textContent = '⟨ Prev';
+  prevBtn.disabled = currentPage === 1;
+  prevBtn.onclick = () => { currentPage--; fetchNewsSources(); };
+  paginationDiv.appendChild(prevBtn);
+
+  for (let i = 1; i <= totalPages; i++) {
+    const btn = document.createElement('button');
+    btn.textContent = i;
+    btn.className = 'mx-1 px-2 py-1 border rounded ' + (i === currentPage ? 'bg-blue-200' : 'bg-white');
+    btn.onclick = () => { currentPage = i; fetchNewsSources(); };
+    paginationDiv.appendChild(btn);
+  }
+
+  const nextBtn = document.createElement('button');
+  nextBtn.textContent = 'Next ⟩';
+  nextBtn.disabled = currentPage === totalPages;
+  nextBtn.onclick = () => { currentPage++; fetchNewsSources(); };
+  paginationDiv.appendChild(nextBtn);
+}
+
+async function editRecord(id) {
+  const { data, error } = await supabase.from('news_sources').select('*').eq('id', id).single();
+  if (error) return alert('Error fetching record');
+  document.getElementById('name_original').value = data.name_original || '';
+  document.getElementById('website_url').value = data.website_url || '';
+  document.getElementById('rss_url').value = data.rss_url || '';
+  document.getElementById('country').value = data.country || '';
+  document.getElementById('language_sup').value = data.language_sup || '';
+  document.getElementById('source_type').value = data.type || '';
+  document.getElementById('saveButton').setAttribute('data-id', id);
+}
+</script>
 <script>
   const { createClient } = supabase;
 </script>
@@ -24,18 +67,20 @@
       if (error) return console.error(error);
       const tbody = document.getElementById('news-table-body');
       tbody.innerHTML = '';
-      data.forEach((item, index) => {
+      data.slice((currentPage - 1) * pageSize, currentPage * pageSize).forEach((item, index) => {
         tbody.innerHTML += `
           <tr>
-            <td class="p-2">${index + 1}</td>
+            <td class="p-2">${(currentPage - 1) * pageSize + index + 1}</td>
             <td class="p-2">${item.name_original}</td>
             <td class="p-2">${item.country}</td>
             <td class="p-2">${item.language_sup || '-'}</td>
             <td class="p-2">
+              <button class="text-blue-600 mr-2" onclick="editRecord(${item.id})">Edit</button>
               <button class="text-red-600" onclick="deleteRecord(${item.id})">Delete</button>
             </td>
           </tr>`;
       });
+      renderPagination(data.length);
     }
 
     async function saveRecord() {
@@ -47,7 +92,14 @@
         language_sup: document.getElementById('language_sup').value,
         type: document.getElementById('source_type').value
       };
-      const { error } = await supabase.from('news_sources').insert([record]);
+      let error;
+  const recordId = document.getElementById('saveButton').getAttribute('data-id');
+  if (recordId) {
+    ({ error } = await supabase.from('news_sources').update(record).eq('id', recordId));
+    document.getElementById('saveButton').removeAttribute('data-id');
+  } else {
+    ({ error } = await supabase.from('news_sources').insert([record]));
+  }
       if (error) return alert('Insert error: ' + error.message);
       alert('Saved!');
       fetchNewsSources();
@@ -99,6 +151,8 @@
         </thead>
         <tbody id="news-table-body"></tbody>
       </table>
+      <div id="pagination" class="mt-4 flex gap-1"></div>
+      </table>
     </div>
 
     <form onsubmit="saveRecord(); return false;" class="bg-white p-4 rounded shadow">
@@ -134,7 +188,7 @@
         </div>
       </div>
       <div class="mt-4">
-        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Save</button>
+        <button type="submit" id="saveButton" class="bg-blue-600 text-white px-4 py-2 rounded">Save</button>
       </div>
     </form>
   </div>
