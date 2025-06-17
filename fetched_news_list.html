@@ -5,127 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>News Sources Management</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
-  <script src="https://unpkg.com/@supabase/supabase-js">let allData = [];
-let currentPage = 1;
-const pageSize = 10;
-
-function renderPagination(totalCount) {
-  const totalPages = Math.ceil(totalCount / pageSize);
-  const paginationDiv = document.getElementById('pagination');
-  paginationDiv.innerHTML = '';
-
-  if (totalPages <= 1) return;
-
-  const prevBtn = document.createElement('button');
-  prevBtn.textContent = '⟨ Prev';
-  prevBtn.disabled = currentPage === 1;
-  prevBtn.onclick = () => { currentPage--; fetchNewsSources(); };
-  paginationDiv.appendChild(prevBtn);
-
-  for (let i = 1; i <= totalPages; i++) {
-    const btn = document.createElement('button');
-    btn.textContent = i;
-    btn.className = 'mx-1 px-2 py-1 border rounded ' + (i === currentPage ? 'bg-blue-200' : 'bg-white');
-    btn.onclick = () => { currentPage = i; fetchNewsSources(); };
-    paginationDiv.appendChild(btn);
-  }
-
-  const nextBtn = document.createElement('button');
-  nextBtn.textContent = 'Next ⟩';
-  nextBtn.disabled = currentPage === totalPages;
-  nextBtn.onclick = () => { currentPage++; fetchNewsSources(); };
-  paginationDiv.appendChild(nextBtn);
-}
-
-async function editRecord(id) {
-  const { data, error } = await supabase.from('news_sources').select('*').eq('id', id).single();
-  if (error) return alert('Error fetching record');
-  document.getElementById('name_original').value = data.name_original || '';
-  document.getElementById('website_url').value = data.website_url || '';
-  document.getElementById('rss_url').value = data.rss_url || '';
-  document.getElementById('country').value = data.country || '';
-  document.getElementById('language_sup').value = data.language_sup || '';
-  document.getElementById('source_type').value = data.type || '';
-  document.getElementById('saveButton').setAttribute('data-id', id);
-}
-</script>
-<script>
-  const { createClient } = supabase;
-</script>
-  <script>
-    const SUPABASE_URL = 'https://tdvimwqotnuvcdvhvbjj.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRkdmltd3FvdG51dmNkdmh2YmpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkxMDY2MjcsImV4cCI6MjA2NDY4MjYyN30.CWNPk-S-ECq0c1LRugDJYOchY3mgC2Zchyr8X8-mDeE';
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-    function changeLanguage(lang) {
-      document.documentElement.lang = lang;
-      document.body.dir = (lang === 'fa') ? 'rtl' : 'ltr';
-    }
-
-    async function fetchNewsSources() {
-      const { data, error } = await supabase.from('news_sources').select();
-      if (error) return console.error(error);
-      const tbody = document.getElementById('news-table-body');
-      tbody.innerHTML = '';
-      data.slice((currentPage - 1) * pageSize, currentPage * pageSize).forEach((item, index) => {
-        tbody.innerHTML += `
-          <tr>
-            <td class="p-2">${(currentPage - 1) * pageSize + index + 1}</td>
-            <td class="p-2">${item.name_original}</td>
-            <td class="p-2">${item.country}</td>
-            <td class="p-2">${item.language_sup || '-'}</td>
-            <td class="p-2">
-              <button class="text-blue-600 mr-2" onclick="editRecord(${item.id})">Edit</button>
-              <button class="text-red-600" onclick="deleteRecord(${item.id})">Delete</button>
-            </td>
-          </tr>`;
-      });
-      renderPagination(data.length);
-    }
-
-    async function saveRecord() {
-      const record = {
-        name_original: document.getElementById('name_original').value,
-        website_url: document.getElementById('website_url').value,
-        rss_url: document.getElementById('rss_url').value,
-        country: document.getElementById('country').value,
-        language_sup: document.getElementById('language_sup').value,
-        type: document.getElementById('source_type').value
-      };
-      let error;
-  const recordId = document.getElementById('saveButton').getAttribute('data-id');
-  if (recordId) {
-    ({ error } = await supabase.from('news_sources').update(record).eq('id', recordId));
-    document.getElementById('saveButton').removeAttribute('data-id');
-  } else {
-    ({ error } = await supabase.from('news_sources').insert([record]));
-  }
-      if (error) return alert('Insert error: ' + error.message);
-      alert('Saved!');
-      fetchNewsSources();
-    }
-
-    async function deleteRecord(id) {
-      if (confirm('Are you sure?')) {
-        await supabase.from('news_sources').delete().eq('id', id);
-        fetchNewsSources();
-      }
-    }
-
-    window.onload = async () => {
-      const testDiv = document.createElement('div');
-      testDiv.className = "bg-yellow-100 text-yellow-800 p-2 mb-4 rounded";
-      try {
-        const { data, error } = await supabase.from('news_sources').select('id, name_original');
-        if (error) throw error;
-        testDiv.textContent = `✅ Connected to Supabase. Found ${data.length} records.`;
-      } catch (e) {
-        testDiv.textContent = `❌ Connection failed: ${e.message}`;
-      }
-      document.body.prepend(testDiv);
-      fetchNewsSources();
-    }
-  </script>
+  <script src="https://unpkg.com/@supabase/supabase-js"></script>
 </head>
 <body class="bg-gray-100 p-6 font-sans">
   <div class="max-w-5xl mx-auto">
@@ -152,7 +32,6 @@ async function editRecord(id) {
         <tbody id="news-table-body"></tbody>
       </table>
       <div id="pagination" class="mt-4 flex gap-1"></div>
-      </table>
     </div>
 
     <form onsubmit="saveRecord(); return false;" class="bg-white p-4 rounded shadow">
@@ -192,5 +71,143 @@ async function editRecord(id) {
       </div>
     </form>
   </div>
+
+<script>
+let allData = [];
+let currentPage = 1;
+const pageSize = 10;
+
+const SUPABASE_URL = 'https://tdvimwqotnuvcdvhvbjj.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRkdmltd3FvdG51dmNkdmh2YmpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkxMDY2MjcsImV4cCI6MjA2NDY4MjYyN30.CWNPk-S-ECq0c1LRugDJYOchY3mgC2Zchyr8X8-mDeE';
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+function changeLanguage(lang) {
+  document.documentElement.lang = lang;
+  document.body.dir = (lang === 'fa') ? 'rtl' : 'ltr';
+}
+
+function renderPagination(totalCount) {
+  const totalPages = Math.ceil(totalCount / pageSize);
+  const paginationDiv = document.getElementById('pagination');
+  paginationDiv.innerHTML = '';
+  if (totalPages <= 1) return;
+
+  const firstBtn = document.createElement('button');
+  firstBtn.textContent = '« First';
+  firstBtn.disabled = currentPage === 1;
+  firstBtn.onclick = () => { currentPage = 1; fetchNewsSources(); };
+  paginationDiv.appendChild(firstBtn);
+
+  const prevBtn = document.createElement('button');
+  prevBtn.textContent = '⟨ Prev';
+  prevBtn.disabled = currentPage === 1;
+  prevBtn.onclick = () => { currentPage--; fetchNewsSources(); };
+  paginationDiv.appendChild(prevBtn);
+
+  for (let i = 1; i <= totalPages; i++) {
+    const btn = document.createElement('button');
+    btn.textContent = i;
+    btn.className = 'mx-1 px-2 py-1 border rounded ' + (i === currentPage ? 'bg-blue-200' : 'bg-white');
+    btn.onclick = () => { currentPage = i; fetchNewsSources(); };
+    paginationDiv.appendChild(btn);
+  }
+
+  const nextBtn = document.createElement('button');
+  nextBtn.textContent = 'Next ⟩';
+  nextBtn.disabled = currentPage === totalPages;
+  nextBtn.onclick = () => { currentPage++; fetchNewsSources(); };
+  paginationDiv.appendChild(nextBtn);
+
+  const lastBtn = document.createElement('button');
+  lastBtn.textContent = 'Last »';
+  lastBtn.disabled = currentPage === totalPages;
+  lastBtn.onclick = () => { currentPage = totalPages; fetchNewsSources(); };
+  paginationDiv.appendChild(lastBtn);
+}
+
+async function fetchNewsSources() {
+  const { data, error } = await supabase.from('news_sources').select();
+  if (error) return console.error(error);
+  allData = data;
+  const tbody = document.getElementById('news-table-body');
+  tbody.innerHTML = '';
+
+  if (!allData || allData.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-gray-500">No records found.</td></tr>';
+    renderPagination(0);
+    return;
+  }
+
+  allData.slice((currentPage - 1) * pageSize, currentPage * pageSize).forEach((item, index) => {
+    tbody.innerHTML += `
+      <tr>
+        <td class="p-2">${(currentPage - 1) * pageSize + index + 1}</td>
+        <td class="p-2">${item.name_original}</td>
+        <td class="p-2">${item.country}</td>
+        <td class="p-2">${item.language_sup || '-'}</td>
+        <td class="p-2">
+          <button class="text-blue-600 mr-2" onclick="editRecord(${item.id})">Edit</button>
+          <button class="text-red-600" onclick="deleteRecord(${item.id})">Delete</button>
+        </td>
+      </tr>`;
+  });
+  renderPagination(allData.length);
+}
+
+async function saveRecord() {
+  const record = {
+    name_original: document.getElementById('name_original').value,
+    website_url: document.getElementById('website_url').value,
+    rss_url: document.getElementById('rss_url').value,
+    country: document.getElementById('country').value,
+    language_sup: document.getElementById('language_sup').value,
+    type: document.getElementById('source_type').value
+  };
+  let error;
+  const recordId = document.getElementById('saveButton').getAttribute('data-id');
+  if (recordId) {
+    ({ error } = await supabase.from('news_sources').update(record).eq('id', recordId));
+    document.getElementById('saveButton').removeAttribute('data-id');
+  } else {
+    ({ error } = await supabase.from('news_sources').insert([record]));
+  }
+  if (error) return alert('Insert error: ' + error.message);
+  alert('Saved!');
+  fetchNewsSources();
+}
+
+async function deleteRecord(id) {
+  if (confirm('Are you sure?')) {
+    await supabase.from('news_sources').delete().eq('id', id);
+    fetchNewsSources();
+  }
+}
+
+async function editRecord(id) {
+  const { data, error } = await supabase.from('news_sources').select('*').eq('id', id).single();
+  if (error) return alert('Error fetching record');
+  document.getElementById('name_original').value = data.name_original || '';
+  document.getElementById('website_url').value = data.website_url || '';
+  document.getElementById('rss_url').value = data.rss_url || '';
+  document.getElementById('country').value = data.country || '';
+  document.getElementById('language_sup').value = data.language_sup || '';
+  document.getElementById('source_type').value = data.type || '';
+  document.getElementById('saveButton').setAttribute('data-id', id);
+}
+
+window.onload = async () => {
+  const testDiv = document.createElement('div');
+  testDiv.className = "bg-yellow-100 text-yellow-800 p-2 mb-4 rounded";
+  try {
+    const { data, error } = await supabase.from('news_sources').select('id, name_original');
+    if (error) throw error;
+    testDiv.textContent = `✅ Connected to Supabase. Found ${data.length} records.`;
+  } catch (e) {
+    testDiv.textContent = `❌ Connection failed: ${e.message}`;
+  }
+  document.body.prepend(testDiv);
+  fetchNewsSources();
+}
+</script>
 </body>
 </html>
