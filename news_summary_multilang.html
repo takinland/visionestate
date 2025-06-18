@@ -43,10 +43,10 @@
             <div>
               <h2 class="text-xl font-semibold text-gray-800 mb-1">${item[`title_${currentLang}`] || item.title_original || 'No Title'}</h2>
               <p class="text-gray-500 text-sm mb-2">
-  ${currentLang === 'fa' ? 'تاریخ انتشار' : 'Published'}:
-  <span class="font-medium text-gray-700">${item.publish_date?.split('T')[0]}</span>
-  · ${currentLang === 'fa' ? 'منبع' : 'Source'}:
-  <span class="font-medium text-gray-700">${item.source_name || 'Unknown'}</span>
+                ${currentLang === 'fa' ? 'تاریخ انتشار' : 'Published'}:
+                <span class="font-medium text-gray-700">${item.publish_date?.split('T')[0]}</span>
+                · ${currentLang === 'fa' ? 'منبع' : 'Source'}:
+                <span class="font-medium text-gray-700">${item.source_name || 'Unknown'}</span>
               </p>
               <p class="text-gray-700 text-sm leading-relaxed line-clamp-3">
                 ${item[`summary_${currentLang}`] || item.summary_original || 'No summary available.'}
@@ -70,40 +70,54 @@
       fetchNews();
     }
 
-    function changePage(delta) {
-  const nextPage = currentPage + delta;
-  if (nextPage < 1 || nextPage > totalPages) return;
-  currentPage = nextPage;
-  fetchNews();
-}
+    function changePage(target) {
+      if (target >= 1 && target <= totalPages) {
+        currentPage = target;
+        fetchNews();
+      }
+    }
 
     function renderPagination() {
       const nav = document.getElementById("pagination-nav");
-      nav.innerHTML = `
-        <div class="flex justify-center mt-6 space-x-2">
-          <button onclick="if (currentPage !== 1) { currentPage = 1; fetchNews(); }" class="px-3 py-1 bg-gray-200 rounded">«</button>
-          <button onclick="changePage(-1)" class="px-3 py-1 bg-gray-200 rounded">‹</button>
-          <button disabled class="px-3 py-1 bg-white border rounded">${currentPage}</button>
-          <button onclick="changePage(1)" class="px-3 py-1 bg-gray-200 rounded">›</button>
-          <button onclick="if (currentPage !== totalPages) { currentPage = totalPages; fetchNews(); }" class="px-3 py-1 bg-gray-200 rounded">»</button>
-        </div>
-      `;
+      nav.innerHTML = '';
+      const wrapper = document.createElement("div");
+      wrapper.className = "flex justify-center mt-6 flex-wrap gap-2";
+
+      const buttons = [
+        { text: '«', page: 1 },
+        { text: '‹', page: currentPage - 1 },
+        { text: currentPage, page: currentPage, isCurrent: true },
+        { text: '›', page: currentPage + 1 },
+        { text: '»', page: totalPages }
+      ];
+
+      buttons.forEach(btn => {
+        const el = document.createElement("button");
+        el.innerText = btn.text;
+        el.className = `px-3 py-1 rounded ${btn.isCurrent ? 'bg-white border' : 'bg-gray-200'}`;
+        el.disabled = btn.page === currentPage && !btn.isCurrent;
+        el.onclick = () => changePage(btn.page);
+        wrapper.appendChild(el);
+      });
+
+      nav.appendChild(wrapper);
     }
 
     window.onload = fetchNews;
-  async function fetchSourceNames(news) {
-  const sourceIds = [...new Set(news.map(n => n.source_id).filter(Boolean))];
-  const res = await fetch(`https://tdvimwqotnuvcdvhvbjj.supabase.co/rest/v1/news_sources?id=in.(${sourceIds.join(',')})`, {
-    headers: {
-      'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRkdmltd3FvdG51dmNkdmh2YmpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkxMDY2MjcsImV4cCI6MjA2NDY4MjYyN30.CWNPk-S-ECq0c1LRugDJYOchY3mgC2Zchyr8X8-mDeE'
+
+    async function fetchSourceNames(news) {
+      const sourceIds = [...new Set(news.map(n => n.source_id).filter(Boolean))];
+      const res = await fetch(`https://tdvimwqotnuvcdvhvbjj.supabase.co/rest/v1/news_sources?id=in.(${sourceIds.join(',')})`, {
+        headers: {
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRkdmltd3FvdG51dmNkdmh2YmpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkxMDY2MjcsImV4cCI6MjA2NDY4MjYyN30.CWNPk-S-ECq0c1LRugDJYOchY3mgC2Zchyr8X8-mDeE'
+        }
+      });
+      const sourceMap = {};
+      const sources = await res.json();
+      for (const s of sources) sourceMap[s.id] = s[`name_${currentLang}`] || s.name_original;
+      return news.map(n => ({ ...n, source_name: sourceMap[n.source_id] || 'Unknown' }));
     }
-  });
-  const sourceMap = {};
-  const sources = await res.json();
-  for (const s of sources) sourceMap[s.id] = s[`name_${currentLang}`] || s.name_original;
-  return news.map(n => ({ ...n, source_name: sourceMap[n.source_id] || 'Unknown' }));
-}
-</script>
+  </script>
   <style>
     .lang-fa { direction: rtl; font-family: sans-serif; }
   </style>
