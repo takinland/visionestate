@@ -12,9 +12,10 @@
     let totalPages = 1;
 
     async function fetchNews() {
-      const countRes = await fetch(`https://tdvimwqotnuvcdvhvbjj.supabase.co/rest/v1/fetched_news?select=language_original&language_original=eq.${currentLang}&count=exact`, {
+      const countRes = await fetch(`https://tdvimwqotnuvcdvhvbjj.supabase.co/rest/v1/fetched_news?language_original=eq.${currentLang}&select=id`, {
         headers: {
-          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRkdmltd3FvdG51dmNkdmh2YmpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkxMDY2MjcsImV4cCI6MjA2NDY4MjYyN30.CWNPk-S-ECq0c1LRugDJYOchY3mgC2Zchyr8X8-mDeE'
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRkdmltd3FvdG51dmNkdmh2YmpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkxMDY2MjcsImV4cCI6MjA2NDY4MjYyN30.CWNPk-S-ECq0c1LRugDJYOchY3mgC2Zchyr8X8-mDeE',
+          'Prefer': 'count=exact'
         }
       });
       const total = parseInt(countRes.headers.get('content-range')?.split('/')?.[1] || 0);
@@ -95,7 +96,7 @@
         const el = document.createElement("button");
         el.innerText = btn.text;
         el.className = `px-3 py-1 rounded ${btn.isCurrent ? 'bg-white border' : 'bg-gray-200'}`;
-        el.disabled = btn.page === currentPage && !btn.isCurrent;
+        el.disabled = btn.page < 1 || btn.page > totalPages || (btn.page === currentPage && !btn.isCurrent);
         el.onclick = () => changePage(btn.page);
         wrapper.appendChild(el);
       });
