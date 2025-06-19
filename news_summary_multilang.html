@@ -22,10 +22,9 @@
         <option value="all">All Categories</option>
       </select>
     </div>
-      
-    </div>
-
+    
     <div id="news-container" class="space-y-6"></div>
+    <div id="pagination-nav" class="mt-6"></div>
     <div id="pagination-nav"></div>
   </div>
 
@@ -61,6 +60,12 @@
     }
 
     async function fetchNews() {
+      let countQuery = `https://tdvimwqotnuvcdvhvbjj.supabase.co/rest/v1/fetched_news?select=id`;
+      if (selectedCategory !== 'all') countQuery += `&category_id=cs.{${selectedCategory}}`;
+      const countRes = await fetch(countQuery, { headers: { 'apikey': API_KEY, 'Prefer': 'count=exact' }});
+      const total = parseInt(countRes.headers.get('content-range')?.split('/')?.[1] || '0');
+      totalPages = Math.ceil(total / pageSize);
+
       let query = `https://tdvimwqotnuvcdvhvbjj.supabase.co/rest/v1/fetched_news?select=*&order=publish_date.desc&limit=${pageSize}&offset=${(currentPage - 1) * pageSize}`;
       if (selectedCategory !== 'all') {
         query += `&category_id=cs.{${selectedCategory}}`;
@@ -69,6 +74,7 @@
       const data = await res.json();
       const dataWithSources = await fetchSourceNames(data);
       renderNews(dataWithSources);
+      renderPagination();
     }
 
     function renderNews(news) {
@@ -151,6 +157,42 @@
     window.onload = () => {
       fetchCategories().then(fetchNews);
     };
+  
+
+    function renderPagination() {
+      const nav = document.getElementById("pagination-nav");
+      nav.innerHTML = '';
+      if (totalPages <= 1) return;
+
+      const wrapper = document.createElement("div");
+      wrapper.className = "flex justify-center mt-6 flex-wrap gap-2";
+
+      const buttons = [
+        { text: '«', page: 1 },
+        { text: '‹', page: currentPage - 1 },
+        { text: currentPage, page: currentPage, isCurrent: true },
+        { text: '›', page: currentPage + 1 },
+        { text: '»', page: totalPages }
+      ];
+
+      buttons.forEach(btn => {
+        const el = document.createElement("button");
+        el.innerText = btn.text;
+        el.className = `px-3 py-1 rounded ${btn.isCurrent ? 'bg-white border' : 'bg-gray-200'}`;
+        el.disabled = btn.page < 1 || btn.page > totalPages || (btn.page === currentPage && !btn.isCurrent);
+        el.onclick = () => changePage(btn.page);
+        wrapper.appendChild(el);
+      });
+
+      nav.appendChild(wrapper);
+    }
+
+    function changePage(page) {
+      if (page >= 1 && page <= totalPages) {
+        currentPage = page;
+        fetchNews();
+      }
+    }
   </script>
 </body>
 </html>
