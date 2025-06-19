@@ -5,56 +5,106 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>News Summary Table</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <style>
+    .lang-fa { direction: rtl; font-family: sans-serif; }
+  </style>
+</head>
+<body class="bg-gray-100 p-6">
+  <div class="max-w-6xl mx-auto space-y-6">
+    <div class="flex flex-wrap gap-4 justify-start items-center mb-4">
+      <select id="lang-select" onchange="changeLang(this.value)" class="p-2 border rounded">
+        <option value="en">English</option>
+        <option value="fa">فارسی</option>
+        <option value="ru">Русский</option>
+        <option value="tr">Türkçe</option>
+      </select>
+      <select id="category-select" onchange="changeCategory(this.value)" class="p-2 border rounded">
+        <option value="all">All Categories</option>
+      </select>
+    </div>
+      
+    </div>
+
+    <div id="news-container" class="space-y-6"></div>
+    <div id="pagination-nav"></div>
+  </div>
+
   <script>
     let currentPage = 1;
     let currentLang = 'en';
+    let selectedCategory = 'all';
     const pageSize = 5;
     let totalPages = 1;
+    const API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRkdmltd3FvdG51dmNkdmh2YmpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkxMDY2MjcsImV4cCI6MjA2NDY4MjYyN30.CWNPk-S-ECq0c1LRugDJYOchY3mgC2Zchyr8X8-mDeE';
+
+    async function fetchCategories() {
+      const res = await fetch(`https://tdvimwqotnuvcdvhvbjj.supabase.co/rest/v1/news_categories?select=*`, {
+        headers: { 'apikey': API_KEY }
+      });
+      const categories = await res.json();
+      renderCategoryOptions(categories);
+    }
+
+    function renderCategoryOptions(categories) {
+      const select = document.getElementById("category-select");
+      select.innerHTML = '';
+      const labels = {
+        en: 'All Categories',
+        fa: 'همه دسته‌ها',
+        tr: 'Tüm Kategoriler',
+        ru: 'Все категории'
+      };
+      select.innerHTML += `<option value="all">${labels[currentLang]}</option>`;
+      for (const cat of categories) {
+        select.innerHTML += `<option value="${cat.id}">${cat[`title_${currentLang}`]}</option>`;
+      }
+    }
 
     async function fetchNews() {
-      const countRes = await fetch(`https://tdvimwqotnuvcdvhvbjj.supabase.co/rest/v1/fetched_news?language_original=eq.${currentLang}&select=id`, {
-        headers: {
-          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRkdmltd3FvdG51dmNkdmh2YmpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkxMDY2MjcsImV4cCI6MjA2NDY4MjYyN30.CWNPk-S-ECq0c1LRugDJYOchY3mgC2Zchyr8X8-mDeE',
-          'Prefer': 'count=exact'
-        }
-      });
-      const total = parseInt(countRes.headers.get('content-range')?.split('/')?.[1] || 0);
-      totalPages = Math.ceil(total / pageSize);
-
-      const res = await fetch(`https://tdvimwqotnuvcdvhvbjj.supabase.co/rest/v1/fetched_news?select=*&language_original=eq.${currentLang}&order=publish_date.desc&limit=${pageSize}&offset=${(currentPage-1)*pageSize}`, {
-        headers: {
-          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRkdmltd3FvdG51dmNkdmh2YmpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkxMDY2MjcsImV4cCI6MjA2NDY4MjYyN30.CWNPk-S-ECq0c1LRugDJYOchY3mgC2Zchyr8X8-mDeE'
-        }
-      });
+      let query = `https://tdvimwqotnuvcdvhvbjj.supabase.co/rest/v1/fetched_news?select=*&order=publish_date.desc&limit=${pageSize}&offset=${(currentPage - 1) * pageSize}`;
+      if (selectedCategory !== 'all') {
+        query += `&category_id=cs.{${selectedCategory}}`;
+      }
+      const res = await fetch(query, { headers: { 'apikey': API_KEY } });
       const data = await res.json();
-      fetchSourceNames(data).then(renderNews);
+      const dataWithSources = await fetchSourceNames(data);
+      renderNews(dataWithSources);
     }
 
     function renderNews(news) {
       const container = document.getElementById("news-container");
       container.innerHTML = '';
+      document.body.setAttribute('dir', currentLang === 'fa' ? 'rtl' : 'ltr');
+      document.documentElement.setAttribute('lang', currentLang);
+
       for (const item of news) {
+        const title = item[`title_${currentLang}`] || item.title_original || 'No Title';
+        const summary = item[`summary_${currentLang}`] || item.summary_original || 'No summary available.';
+        const source = item.source_name || 'Unknown';
+        const date = item.publish_date?.split('T')[0] || '';
+
         const div = document.createElement('div');
         div.className = `bg-white shadow rounded-xl flex overflow-hidden ${currentLang === 'fa' ? 'lang-fa' : ''}`;
         div.innerHTML = `
-          <div class="w-48 h-36 flex-shrink-0">
-            <img src="${item.image_url || 'https://via.placeholder.com/150'}" alt="" class="object-cover w-full h-full">
+          <div class=\"w-48 h-36 flex-shrink-0\">
+            <img src=\"${item.image_url || 'https://via.placeholder.com/150'}\" alt=\"\" class=\"object-cover w-full h-full\">
           </div>
-          <div class="flex-1 p-4 flex flex-col justify-between">
+          <div class=\"flex-1 p-4 flex flex-col justify-between\">
             <div>
-              <h2 class="text-xl font-semibold text-gray-800 mb-1">${item[`title_${currentLang}`] || item.title_original || 'No Title'}</h2>
-              <p class="text-gray-500 text-sm mb-2">
+              <h2 class=\"text-xl font-semibold text-gray-800 mb-1\">${title}</h2>
+              <p class=\"text-gray-500 text-sm mb-2\">
                 ${currentLang === 'fa' ? 'تاریخ انتشار' : 'Published'}:
-                <span class="font-medium text-gray-700">${item.publish_date?.split('T')[0]}</span>
+                <span class=\"font-medium text-gray-700\">${date}</span>
                 · ${currentLang === 'fa' ? 'منبع' : 'Source'}:
-                <span class="font-medium text-gray-700">${item.source_name || 'Unknown'}</span>
+                <span class=\"font-medium text-gray-700\">${source}</span>
               </p>
-              <p class="text-gray-700 text-sm leading-relaxed line-clamp-3">
-                ${item[`summary_${currentLang}`] || item.summary_original || 'No summary available.'}
-              </p>
+              <p class=\"text-gray-700 text-sm leading-relaxed line-clamp-3\">${summary}</p>
             </div>
-            <div class="mt-3">
-              <a href="${item.source_url}" target="_blank" class="inline-block text-sm text-blue-600 hover:underline">
+            <div class=\"mt-2 flex flex-wrap gap-2\">
+              ${(item[`tags_${currentLang}`] || []).map(tag => `<span class='bg-gray-200 text-xs px-2 py-1 rounded'>#${tag}</span>`).join(' ')}
+            </div>
+            <div class=\"mt-3\">
+              <a href=\"${item.source_url}\" target=\"_blank\" class=\"inline-block text-sm text-blue-600 hover:underline\">
                 ${currentLang === 'fa' ? 'مشاهده کامل خبر ←' : 'Read full article →'}
               </a>
             </div>
@@ -62,84 +112,45 @@
         `;
         container.appendChild(div);
       }
-      renderPagination();
     }
 
     function changeLang(lang) {
       currentLang = lang;
       currentPage = 1;
+      const categorySelect = document.getElementById("category-select");
+      const currentValue = categorySelect.value;
+      fetchCategories().then(() => {
+        categorySelect.value = currentValue;
+        fetchNews();
+      });
+    }
+
+    function changeCategory(catId) {
+      selectedCategory = catId;
+      currentPage = 1;
       fetchNews();
     }
 
-    function changePage(target) {
-      if (target >= 1 && target <= totalPages) {
-        currentPage = target;
-        fetchNews();
-      }
-    }
-
-    function renderPagination() {
-      const nav = document.getElementById("pagination-nav");
-      nav.innerHTML = '';
-      const wrapper = document.createElement("div");
-      wrapper.className = "flex justify-center mt-6 flex-wrap gap-2";
-
-      const buttons = [
-        { text: '«', page: 1 },
-        { text: '‹', page: currentPage - 1 },
-        { text: currentPage, page: currentPage, isCurrent: true },
-        { text: '›', page: currentPage + 1 },
-        { text: '»', page: totalPages }
-      ];
-
-      buttons.forEach(btn => {
-        const el = document.createElement("button");
-        el.innerText = btn.text;
-        el.className = `px-3 py-1 rounded ${btn.isCurrent ? 'bg-white border' : 'bg-gray-200'}`;
-        el.disabled = btn.page < 1 || btn.page > totalPages || (btn.page === currentPage && !btn.isCurrent);
-        el.onclick = () => changePage(btn.page);
-        wrapper.appendChild(el);
-      });
-
-      nav.appendChild(wrapper);
-    }
-
-    window.onload = fetchNews;
-
     async function fetchSourceNames(news) {
       const sourceIds = [...new Set(news.map(n => n.source_id).filter(Boolean))];
+      if (sourceIds.length === 0) return news;
+
       const res = await fetch(`https://tdvimwqotnuvcdvhvbjj.supabase.co/rest/v1/news_sources?id=in.(${sourceIds.join(',')})`, {
-        headers: {
-          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRkdmltd3FvdG51dmNkdmh2YmpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkxMDY2MjcsImV4cCI6MjA2NDY4MjYyN30.CWNPk-S-ECq0c1LRugDJYOchY3mgC2Zchyr8X8-mDeE'
-        }
+        headers: { 'apikey': API_KEY }
       });
-      const sourceMap = {};
+
       const sources = await res.json();
-      for (const s of sources) sourceMap[s.id] = s[`name_${currentLang}`] || s.name_original;
+      const sourceMap = {};
+      for (const s of sources) {
+        sourceMap[s.id] = s[`name_${currentLang}`] || s.name_original;
+      }
+
       return news.map(n => ({ ...n, source_name: sourceMap[n.source_id] || 'Unknown' }));
     }
+
+    window.onload = () => {
+      fetchCategories().then(fetchNews);
+    };
   </script>
-  <style>
-    .lang-fa { direction: rtl; font-family: sans-serif; }
-  </style>
-</head>
-<body class="bg-gray-100 p-6">
-  <div class="max-w-5xl mx-auto space-y-6">
-    <div class="flex justify-between items-center mb-4">
-      <div>
-        <label for="lang-select" class="text-sm font-semibold mr-2">Language:</label>
-        <select id="lang-select" onchange="changeLang(this.value)" class="p-2 border rounded">
-          <option value="en">English</option>
-          <option value="fa">فارسی</option>
-          <option value="ru">Русский</option>
-          <option value="tr">Türkçe</option>
-        </select>
-      </div>
-    </div>
-
-    <div id="news-container" class="space-y-6"></div>
-
-    <div id="pagination-nav"></div>
-  </div>
 </body>
 </html>
