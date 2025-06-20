@@ -25,7 +25,6 @@
     
     <div id="news-container" class="space-y-6"></div>
     <div id="pagination-nav" class="mt-6"></div>
-    <div id="pagination-nav"></div>
   </div>
 
   <script>
@@ -36,45 +35,50 @@
     let totalPages = 1;
     const API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRkdmltd3FvdG51dmNkdmh2YmpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkxMDY2MjcsImV4cCI6MjA2NDY4MjYyN30.CWNPk-S-ECq0c1LRugDJYOchY3mgC2Zchyr8X8-mDeE';
 
-    async function fetchCategories() {
-      const res = await fetch(`https://tdvimwqotnuvcdvhvbjj.supabase.co/rest/v1/news_categories?select=*`, {
-        headers: { 'apikey': API_KEY }
+    async function fetchNews() {
+      let newsIds = [];
+
+      if (selectedCategory !== 'all') {
+        const catRelRes = await fetch(`https://tdvimwqotnuvcdvhvbjj.supabase.co/rest/v1/fetched_news_categories?category_id=eq.${selectedCategory}`, {
+          headers: { 'apikey': API_KEY }
+        });
+        const catRelations = await catRelRes.json();
+        newsIds = [...new Set(catRelations.map(r => r.news_id))];
+        if (newsIds.length === 0) {
+          renderNews([]);
+          renderPagination(0);
+          return;
+        }
+      }
+
+      const countRes = await fetch(`https://tdvimwqotnuvcdvhvbjj.supabase.co/rest/v1/fetched_news${newsIds.length > 0 ? `?id=in.(${newsIds.join(',')})` : ''}`, {
+        headers: { 'apikey': API_KEY, 'Prefer': 'count=exact' }
       });
-      const categories = await res.json();
-      renderCategoryOptions(categories);
+      const total = parseInt(countRes.headers.get('content-range')?.split('/')?.[1] || '0');
+      totalPages = Math.ceil(total / pageSize);
+
+      let query = `https://tdvimwqotnuvcdvhvbjj.supabase.co/rest/v1/fetched_news?order=publish_date.desc&limit=${pageSize}&offset=${(currentPage - 1) * pageSize}`;
+      if (newsIds.length > 0) query += `&id=in.(${newsIds.join(',')})`;
+
+      const res = await fetch(query, { headers: { 'apikey': API_KEY } });
+      const data = await res.json();
+      const dataWithSources = await fetchSourceNames(data);
+      renderNews(dataWithSources);
+      renderPagination();
     }
 
     function renderCategoryOptions(categories) {
       const select = document.getElementById("category-select");
-      select.innerHTML = '';
       const labels = {
         en: 'All Categories',
         fa: 'همه دسته‌ها',
         tr: 'Tüm Kategoriler',
         ru: 'Все категории'
       };
-      select.innerHTML += `<option value="all">${labels[currentLang]}</option>`;
+      select.innerHTML = `<option value="all">${labels[currentLang]}</option>`;
       for (const cat of categories) {
         select.innerHTML += `<option value="${cat.id}">${cat[`title_${currentLang}`]}</option>`;
       }
-    }
-
-    async function fetchNews() {
-      let countQuery = `https://tdvimwqotnuvcdvhvbjj.supabase.co/rest/v1/fetched_news?select=id`;
-      if (selectedCategory !== 'all') countQuery += `&category_id=cs.{${selectedCategory}}`;
-      const countRes = await fetch(countQuery, { headers: { 'apikey': API_KEY, 'Prefer': 'count=exact' }});
-      const total = parseInt(countRes.headers.get('content-range')?.split('/')?.[1] || '0');
-      totalPages = Math.ceil(total / pageSize);
-
-      let query = `https://tdvimwqotnuvcdvhvbjj.supabase.co/rest/v1/fetched_news?select=*&order=publish_date.desc&limit=${pageSize}&offset=${(currentPage - 1) * pageSize}`;
-      if (selectedCategory !== 'all') {
-        query += `&category_id=cs.{${selectedCategory}}`;
-      }
-      const res = await fetch(query, { headers: { 'apikey': API_KEY } });
-      const data = await res.json();
-      const dataWithSources = await fetchSourceNames(data);
-      renderNews(dataWithSources);
-      renderPagination();
     }
 
     function renderNews(news) {
@@ -92,25 +96,22 @@
         const div = document.createElement('div');
         div.className = `bg-white shadow rounded-xl flex overflow-hidden ${currentLang === 'fa' ? 'lang-fa' : ''}`;
         div.innerHTML = `
-          <div class=\"w-48 h-36 flex-shrink-0\">
-            <img src=\"${item.image_url || 'https://via.placeholder.com/150'}\" alt=\"\" class=\"object-cover w-full h-full\">
+          <div class="w-48 h-36 flex-shrink-0">
+            <img src="${item.image_url || 'https://via.placeholder.com/150'}" alt="" class="object-cover w-full h-full">
           </div>
-          <div class=\"flex-1 p-4 flex flex-col justify-between\">
+          <div class="flex-1 p-4 flex flex-col justify-between">
             <div>
-              <h2 class=\"text-xl font-semibold text-gray-800 mb-1\">${title}</h2>
-              <p class=\"text-gray-500 text-sm mb-2\">
+              <h2 class="text-xl font-semibold text-gray-800 mb-1">${title}</h2>
+              <p class="text-gray-500 text-sm mb-2">
                 ${currentLang === 'fa' ? 'تاریخ انتشار' : 'Published'}:
-                <span class=\"font-medium text-gray-700\">${date}</span>
+                <span class="font-medium text-gray-700">${date}</span>
                 · ${currentLang === 'fa' ? 'منبع' : 'Source'}:
-                <span class=\"font-medium text-gray-700\">${source}</span>
+                <span class="font-medium text-gray-700">${source}</span>
               </p>
-              <p class=\"text-gray-700 text-sm leading-relaxed line-clamp-3\">${summary}</p>
+              <p class="text-gray-700 text-sm leading-relaxed">${summary}</p>
             </div>
-            <div class=\"mt-2 flex flex-wrap gap-2\">
-              ${(item[`tags_${currentLang}`] || []).map(tag => `<span class='bg-gray-200 text-xs px-2 py-1 rounded'>#${tag}</span>`).join(' ')}
-            </div>
-            <div class=\"mt-3\">
-              <a href=\"${item.source_url}\" target=\"_blank\" class=\"inline-block text-sm text-blue-600 hover:underline\">
+            <div class="mt-3">
+              <a href="${item.source_url}" target="_blank" class="inline-block text-sm text-blue-600 hover:underline">
                 ${currentLang === 'fa' ? 'مشاهده کامل خبر ←' : 'Read full article →'}
               </a>
             </div>
@@ -120,21 +121,12 @@
       }
     }
 
-    function changeLang(lang) {
-      currentLang = lang;
-      currentPage = 1;
-      const categorySelect = document.getElementById("category-select");
-      const currentValue = categorySelect.value;
-      fetchCategories().then(() => {
-        categorySelect.value = currentValue;
-        fetchNews();
+    async function fetchCategories() {
+      const res = await fetch(`https://tdvimwqotnuvcdvhvbjj.supabase.co/rest/v1/news_categories?select=*`, {
+        headers: { 'apikey': API_KEY }
       });
-    }
-
-    function changeCategory(catId) {
-      selectedCategory = catId;
-      currentPage = 1;
-      fetchNews();
+      const categories = await res.json();
+      renderCategoryOptions(categories);
     }
 
     async function fetchSourceNames(news) {
@@ -154,10 +146,21 @@
       return news.map(n => ({ ...n, source_name: sourceMap[n.source_id] || 'Unknown' }));
     }
 
-    window.onload = () => {
-      fetchCategories().then(fetchNews);
-    };
-  
+    function changeLang(lang) {
+      currentLang = lang;
+      currentPage = 1;
+      const currentValue = document.getElementById("category-select").value;
+      fetchCategories().then(() => {
+        document.getElementById("category-select").value = currentValue;
+        fetchNews();
+      });
+    }
+
+    function changeCategory(catId) {
+      selectedCategory = catId;
+      currentPage = 1;
+      fetchNews();
+    }
 
     function renderPagination() {
       const nav = document.getElementById("pagination-nav");
@@ -193,6 +196,10 @@
         fetchNews();
       }
     }
+
+    window.onload = () => {
+      fetchCategories().then(fetchNews);
+    };
   </script>
 </body>
 </html>
