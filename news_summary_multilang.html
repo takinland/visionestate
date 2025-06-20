@@ -1,3 +1,5 @@
+<!-- هیچ تغییری در ساختار کلی داده نشده، فقط بخش fetchSourceNames اصلاح شده است -->
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -140,7 +142,7 @@
       const sources = await res.json();
       const sourceMap = {};
       for (const s of sources) {
-        sourceMap[s.id] = s[`name_${currentLang}`] || s.name_original;
+        sourceMap[s.id] = s.name_original; // ✅ فقط name_original
       }
 
       return news.map(n => ({ ...n, source_name: sourceMap[n.source_id] || 'Unknown' }));
