@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>News Summary Table</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <style>
@@ -18,9 +18,13 @@
         <option value="ru">Русский</option>
         <option value="tr">Türkçe</option>
       </select>
+
       <select id="category-select" onchange="changeCategory(this.value)" class="p-2 border rounded">
         <option value="all">All Categories</option>
       </select>
+
+      <input type="date" id="start-date" onchange="applyDateFilter()" class="p-2 border rounded" />
+      <input type="date" id="end-date" onchange="applyDateFilter()" class="p-2 border rounded" />
     </div>
 
     <div id="news-container" class="space-y-6"></div>
@@ -31,28 +35,43 @@
     let currentPage = 1;
     let currentLang = 'en';
     let selectedCategory = 'all';
-    const pageSize = 5;
     let totalPages = 1;
+    const pageSize = 5;
     const API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRkdmltd3FvdG51dmNkdmh2YmpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkxMDY2MjcsImV4cCI6MjA2NDY4MjYyN30.CWNPk-S-ECq0c1LRugDJYOchY3mgC2Zchyr8X8-mDeE';
 
     async function fetchNews() {
-      let categoryFilter = '';
+      let filter = '';
       if (selectedCategory !== 'all') {
-        categoryFilter = `&category_ids=cs.{${selectedCategory}}`;
+        filter += `&category_ids=cs.{${selectedCategory}}`;
       }
 
-      const countRes = await fetch(`https://tdvimwqotnuvcdvhvbjj.supabase.co/rest/v1/fetched_news?select=id${categoryFilter}`, {
+      const startDate = document.getElementById("start-date").value;
+      const endDate = document.getElementById("end-date").value;
+
+      if (startDate) {
+        filter += `&publish_date=gte.${startDate}`;
+      }
+      if (endDate) {
+        filter += `&publish_date=lte.${endDate}`;
+      }
+
+      const countRes = await fetch(`https://tdvimwqotnuvcdvhvbjj.supabase.co/rest/v1/fetched_news?select=id${filter}`, {
         headers: { 'apikey': API_KEY, 'Prefer': 'count=exact' }
       });
       const total = parseInt(countRes.headers.get('content-range')?.split('/')?.[1] || '0');
       totalPages = Math.ceil(total / pageSize);
 
-      const query = `https://tdvimwqotnuvcdvhvbjj.supabase.co/rest/v1/fetched_news?order=publish_date.desc&limit=${pageSize}&offset=${(currentPage - 1) * pageSize}${categoryFilter}`;
+      const query = `https://tdvimwqotnuvcdvhvbjj.supabase.co/rest/v1/fetched_news?order=publish_date.desc&limit=${pageSize}&offset=${(currentPage - 1) * pageSize}${filter}`;
       const res = await fetch(query, { headers: { 'apikey': API_KEY } });
       const data = await res.json();
       const dataWithSources = await fetchSourceNames(data);
       renderNews(dataWithSources);
       renderPagination();
+    }
+
+    function applyDateFilter() {
+      currentPage = 1;
+      fetchNews();
     }
 
     function renderCategoryOptions(categories) {
