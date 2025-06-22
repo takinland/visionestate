@@ -85,6 +85,7 @@
       for (const item of news) {
         const title = item[`title_${currentLang}`] || item.title_original || 'No Title';
         const summary = item[`summary_${currentLang}`] || item.summary_original || '';
+        const tags = item[`tags_${currentLang}`] || [];
         const source = item.source_name || 'Unknown';
         const date = item.publish_date?.split('T')[0] || '';
 
@@ -106,6 +107,7 @@
             <span class="font-medium text-gray-800">${source}</span>
           </div>
           <p class="text-sm text-gray-700 leading-relaxed">${summary}</p>
+          ${tags.length > 0 ? `<div class="text-xs text-gray-500">${tags.map(t => `<span class="inline-block bg-blue-100 text-blue-800 px-2 py-0.5 rounded mr-1">#${t}</span>`).join(' ')}</div>` : ''}
           <a href="${item.source_url}" target="_blank" class="inline-block text-sm text-blue-600 hover:underline">
             ${currentLang === 'fa' ? 'مشاهده کامل خبر →' : 'Read full article →'}
           </a>
