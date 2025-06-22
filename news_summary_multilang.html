@@ -36,29 +36,18 @@
     const API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRkdmltd3FvdG51dmNkdmh2YmpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkxMDY2MjcsImV4cCI6MjA2NDY4MjYyN30.CWNPk-S-ECq0c1LRugDJYOchY3mgC2Zchyr8X8-mDeE';
 
     async function fetchNews() {
-      let newsIds = [];
+      let categoryFilter = '';
       if (selectedCategory !== 'all') {
-        const relRes = await fetch(`https://tdvimwqotnuvcdvhvbjj.supabase.co/rest/v1/fetched_news_categories?category_id=eq.${selectedCategory}`, {
-          headers: { 'apikey': API_KEY }
-        });
-        const rel = await relRes.json();
-        newsIds = [...new Set(rel.map(r => r.news_id))];
-        if (newsIds.length === 0) {
-          renderNews([]);
-          renderPagination(0);
-          return;
-        }
+        categoryFilter = `&category_ids=cs.{${selectedCategory}}`;
       }
 
-      const countRes = await fetch(`https://tdvimwqotnuvcdvhvbjj.supabase.co/rest/v1/fetched_news${newsIds.length ? `?id=in.(${newsIds.join(',')})` : ''}`, {
+      const countRes = await fetch(`https://tdvimwqotnuvcdvhvbjj.supabase.co/rest/v1/fetched_news?select=id${categoryFilter}`, {
         headers: { 'apikey': API_KEY, 'Prefer': 'count=exact' }
       });
       const total = parseInt(countRes.headers.get('content-range')?.split('/')?.[1] || '0');
       totalPages = Math.ceil(total / pageSize);
 
-      let query = `https://tdvimwqotnuvcdvhvbjj.supabase.co/rest/v1/fetched_news?order=publish_date.desc&limit=${pageSize}&offset=${(currentPage - 1) * pageSize}`;
-      if (newsIds.length) query += `&id=in.(${newsIds.join(',')})`;
-
+      const query = `https://tdvimwqotnuvcdvhvbjj.supabase.co/rest/v1/fetched_news?order=publish_date.desc&limit=${pageSize}&offset=${(currentPage - 1) * pageSize}${categoryFilter}`;
       const res = await fetch(query, { headers: { 'apikey': API_KEY } });
       const data = await res.json();
       const dataWithSources = await fetchSourceNames(data);
@@ -108,7 +97,7 @@
           </div>
           <p class="text-sm text-gray-700 leading-relaxed">${summary}</p>
           <a href="${item.source_url}" target="_blank" class="inline-block text-sm text-blue-600 hover:underline">
-            ${currentLang === 'fa' ? 'مشاهده کامل خبر ←' : 'Read full article →'}
+            ${currentLang === 'fa' ? 'مشاهده کامل خبر →' : 'Read full article →'}
           </a>
         `;
         container.appendChild(div);
