@@ -49,45 +49,45 @@
   </table>
 
   <script>
-    const supabase = supabase.createClient(
-      'https://tdvimwqotnuvcdvhvbjj.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRkdmltd3FvdG51dmNkdmh2YmpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkxMDY2MjcsImV4cCI6MjA2NDY4MjYyN30.CWNPk-S-ECq0c1LRugDJYOchY3mgC2Zchyr8X8-mDeE'
-    );
+    const { createClient } = supabase;
+    const supabaseUrl = 'https://tdvimwqotnuvcdvhvbjj.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRkdmltd3FvdG51dmNkdmh2YmpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkxMDY2MjcsImV4cCI6MjA2NDY4MjYyN30.CWNPk-S-ECq0c1LRugDJYOchY3mgC2Zchyr8X8-mDeE';
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    window.addEventListener('DOMContentLoaded', () => {
+      applyLanguage(document.getElementById('languageSwitcher').value);
+      fetchContacts();
+    });
 
     const translations = {
       en: {
-        'Company Name': 'Company Name', 'Domain': 'Domain', 'Email(s)': 'Email(s)', 'Phone(s)': 'Phone(s)',
-        'Language': 'Language', 'Business Sector': 'Business Sector', 'Authorised Person': 'Authorised Person',
-        'Save': 'Save', 'Scraped Contacts': 'Scraped Contacts', 'Company': 'Company', 'Email': 'Email', 'Phone': 'Phone',
-        'Sector': 'Sector', 'Person': 'Person', 'Actions': 'Actions'
+        'Scraped Contacts': 'Scraped Contacts', 'Company': 'Company', 'Domain': 'Domain', 'Email': 'Email(s)', 'Phone': 'Phone(s)',
+        'Language': 'Language', 'Sector': 'Business Sector', 'Person': 'Authorised Person', 'Actions': 'Actions', 'Save': 'Save'
       },
       tr: {
-        'Company Name': 'Şirket Adı', 'Domain': 'Alan Adı', 'Email(s)': 'E-posta(lar)', 'Phone(s)': 'Telefon(lar)',
-        'Language': 'Dil', 'Business Sector': 'İş Sektörü', 'Authorised Person': 'Sorumlu Kişi',
-        'Save': 'Kaydet', 'Scraped Contacts': 'Kazınmış Kişiler', 'Company': 'Şirket', 'Email': 'E-posta', 'Phone': 'Telefon',
-        'Sector': 'Sektör', 'Person': 'Kişi', 'Actions': 'İşlemler'
+        'Scraped Contacts': 'Kazınan Kişiler', 'Company': 'Şirket', 'Domain': 'Alan Adı', 'Email': 'E-posta(lar)', 'Phone': 'Telefon(lar)',
+        'Language': 'Dil', 'Sector': 'Sektör', 'Person': 'Yetkili Kişi', 'Actions': 'İşlemler', 'Save': 'Kaydet'
       },
       fa: {
-        'Company Name': 'نام شرکت', 'Domain': 'دامنه', 'Email(s)': 'ایمیل', 'Phone(s)': 'تلفن',
-        'Language': 'زبان', 'Business Sector': 'بخش کسب‌وکار', 'Authorised Person': 'شخص مسئول',
-        'Save': 'ذخیره', 'Scraped Contacts': 'مخاطبین استخراج‌شده', 'Company': 'شرکت', 'Email': 'ایمیل', 'Phone': 'تلفن',
-        'Sector': 'بخش', 'Person': 'شخص', 'Actions': 'عملیات'
+        'Scraped Contacts': 'مخاطبین استخراج‌شده', 'Company': 'شرکت', 'Domain': 'دامنه', 'Email': 'ایمیل(ها)', 'Phone': 'تلفن(ها)',
+        'Language': 'زبان', 'Sector': 'بخش کسب‌وکار', 'Person': 'شخص مسئول', 'Actions': 'عملیات', 'Save': 'ذخیره'
       },
       ru: {
-        'Company Name': 'Название компании', 'Domain': 'Домен', 'Email(s)': 'Эл. почта', 'Phone(s)': 'Телефон(ы)',
-        'Language': 'Язык', 'Business Sector': 'Сектор бизнеса', 'Authorised Person': 'Ответственное лицо',
-        'Save': 'Сохранить', 'Scraped Contacts': 'Собранные контакты', 'Company': 'Компания', 'Email': 'Эл. почта', 'Phone': 'Телефон',
-        'Sector': 'Сектор', 'Person': 'Лицо', 'Actions': 'Действия'
+        'Scraped Contacts': 'Собранные контакты', 'Company': 'Компания', 'Domain': 'Домен', 'Email': 'Эл. почта(ы)', 'Phone': 'Телефон(ы)',
+        'Language': 'Язык', 'Sector': 'Сектор бизнеса', 'Person': 'Ответственное лицо', 'Actions': 'Действия', 'Save': 'Сохранить'
       }
     };
 
-    document.getElementById('languageSwitcher').addEventListener('change', function () {
-      const lang = this.value;
-      document.body.dir = lang === 'fa' ? 'rtl' : 'ltr';
+    function applyLanguage(lang) {
       const t = translations[lang];
-
+      document.body.dir = lang === 'fa' ? 'rtl' : 'ltr';
       document.querySelectorAll('[placeholder]').forEach(el => {
-        if (t[el.placeholder]) el.placeholder = t[el.placeholder];
+        for (let key in translations.en) {
+          if (el.placeholder === translations.en[key] || Object.values(translations).some(l => l[key] === el.placeholder)) {
+            el.placeholder = t[key];
+            break;
+          }
+        }
       });
       document.querySelector('button[type="submit"]').textContent = t['Save'];
       document.getElementById('form-title').textContent = '📇 ' + t['Scraped Contacts'];
@@ -95,6 +95,10 @@
         const key = th.getAttribute('data-i18n');
         if (t[key]) th.textContent = t[key];
       });
+    }
+
+    document.getElementById('languageSwitcher').addEventListener('change', function () {
+      applyLanguage(this.value);
     });
 
     async function fetchContacts() {
@@ -118,6 +122,8 @@
             </td>`;
           tbody.appendChild(tr);
         });
+      } else {
+        console.error(error);
       }
     }
 
@@ -152,8 +158,6 @@
       document.getElementById('contactForm').reset();
       fetchContacts();
     });
-
-    fetchContacts();
   </script>
 </body>
 </html>
