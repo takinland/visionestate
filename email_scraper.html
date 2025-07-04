@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Scraped Contacts Form</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <style>
@@ -41,18 +41,23 @@
   <table id="contactsTable">
     <thead>
       <tr>
-        <th data-i18n="Company">Company</th><th data-i18n="Domain">Domain</th><th data-i18n="Email">Email</th><th data-i18n="Phone">Phone</th>
-        <th data-i18n="Language">Language</th><th data-i18n="Sector">Sector</th><th data-i18n="Person">Person</th><th data-i18n="Actions">Actions</th>
+        <th data-i18n="Company">Company</th>
+        <th data-i18n="Domain">Domain</th>
+        <th data-i18n="Email">Email</th>
+        <th data-i18n="Phone">Phone</th>
+        <th data-i18n="Language">Language</th>
+        <th data-i18n="Sector">Sector</th>
+        <th data-i18n="Person">Person</th>
+        <th data-i18n="Actions">Actions</th>
       </tr>
     </thead>
     <tbody></tbody>
   </table>
 
   <script>
-    const { createClient } = supabase;
     const supabaseUrl = 'https://tdvimwqotnuvcdvhvbjj.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRkdmltd3FvdG51dmNkdmh2YmpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkxMDY2MjcsImV4cCI6MjA2NDY4MjYyN30.CWNPk-S-ECq0c1LRugDJYOchY3mgC2Zchyr8X8-mDeE';
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
     window.addEventListener('DOMContentLoaded', () => {
       applyLanguage(document.getElementById('languageSwitcher').value);
@@ -134,7 +139,11 @@
 
     function editContact(data) {
       for (let key in data) {
-        if (document.getElementById(key)) document.getElementById(key).value = Array.isArray(data[key]) ? data[key].join(', ') : data[key];
+        if (document.getElementById(key)) {
+          document.getElementById(key).value = Array.isArray(data[key])
+            ? data[key].join(', ')
+            : data[key];
+        }
       }
     }
 
