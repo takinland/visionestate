@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scraped Contacts Form</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <style>
+    body { font-family: Arial; padding: 20px; direction: ltr; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    th { background: #f4f4f4; }
+    .btn { padding: 6px 10px; margin: 4px; cursor: pointer; }
+    .delete { color: red; }
+    .update { color: blue; }
+    select, input, button { margin: 5px; }
+  </style>
+</head>
+<body>
+  <h2 id="form-title">📇 Scraped Contacts</h2>
+
+  <select id="languageSwitcher">
+    <option value="en">English</option>
+    <option value="tr">Türkçe</option>
+    <option value="fa">فارسی</option>
+    <option value="ru">Русский</option>
+  </select>
+
+  <form id="contactForm">
+    <input type="hidden" id="id" />
+    <input type="text" id="company_name" placeholder="Company Name" required />
+    <input type="text" id="domain" placeholder="Domain" required />
+    <input type="text" id="email" placeholder="Email(s)" />
+    <input type="text" id="phone" placeholder="Phone(s)" />
+    <input type="text" id="language" placeholder="Language" />
+    <input type="text" id="business_sect" placeholder="Business Sector" />
+    <input type="text" id="authorised_person" placeholder="Authorised Person" />
+    <button type="submit">Save</button>
+  </form>
+
+  <table id="contactsTable">
+    <thead>
+      <tr>
+        <th data-i18n="Company">Company</th><th data-i18n="Domain">Domain</th><th data-i18n="Email">Email</th><th data-i18n="Phone">Phone</th>
+        <th data-i18n="Language">Language</th><th data-i18n="Sector">Sector</th><th data-i18n="Person">Person</th><th data-i18n="Actions">Actions</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    const supabase = supabase.createClient(
+      'https://tdvimwqotnuvcdvhvbjj.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRkdmltd3FvdG51dmNkdmh2YmpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkxMDY2MjcsImV4cCI6MjA2NDY4MjYyN30.CWNPk-S-ECq0c1LRugDJYOchY3mgC2Zchyr8X8-mDeE'
+    );
+
+    const translations = {
+      en: {
+        'Company Name': 'Company Name', 'Domain': 'Domain', 'Email(s)': 'Email(s)', 'Phone(s)': 'Phone(s)',
+        'Language': 'Language', 'Business Sector': 'Business Sector', 'Authorised Person': 'Authorised Person',
+        'Save': 'Save', 'Scraped Contacts': 'Scraped Contacts', 'Company': 'Company', 'Email': 'Email', 'Phone': 'Phone',
+        'Sector': 'Sector', 'Person': 'Person', 'Actions': 'Actions'
+      },
+      tr: {
+        'Company Name': 'Şirket Adı', 'Domain': 'Alan Adı', 'Email(s)': 'E-posta(lar)', 'Phone(s)': 'Telefon(lar)',
+        'Language': 'Dil', 'Business Sector': 'İş Sektörü', 'Authorised Person': 'Sorumlu Kişi',
+        'Save': 'Kaydet', 'Scraped Contacts': 'Kazınmış Kişiler', 'Company': 'Şirket', 'Email': 'E-posta', 'Phone': 'Telefon',
+        'Sector': 'Sektör', 'Person': 'Kişi', 'Actions': 'İşlemler'
+      },
+      fa: {
+        'Company Name': 'نام شرکت', 'Domain': 'دامنه', 'Email(s)': 'ایمیل', 'Phone(s)': 'تلفن',
+        'Language': 'زبان', 'Business Sector': 'بخش کسب‌وکار', 'Authorised Person': 'شخص مسئول',
+        'Save': 'ذخیره', 'Scraped Contacts': 'مخاطبین استخراج‌شده', 'Company': 'شرکت', 'Email': 'ایمیل', 'Phone': 'تلفن',
+        'Sector': 'بخش', 'Person': 'شخص', 'Actions': 'عملیات'
+      },
+      ru: {
+        'Company Name': 'Название компании', 'Domain': 'Домен', 'Email(s)': 'Эл. почта', 'Phone(s)': 'Телефон(ы)',
+        'Language': 'Язык', 'Business Sector': 'Сектор бизнеса', 'Authorised Person': 'Ответственное лицо',
+        'Save': 'Сохранить', 'Scraped Contacts': 'Собранные контакты', 'Company': 'Компания', 'Email': 'Эл. почта', 'Phone': 'Телефон',
+        'Sector': 'Сектор', 'Person': 'Лицо', 'Actions': 'Действия'
+      }
+    };
+
+    document.getElementById('languageSwitcher').addEventListener('change', function () {
+      const lang = this.value;
+      document.body.dir = lang === 'fa' ? 'rtl' : 'ltr';
+      const t = translations[lang];
+
+      document.querySelectorAll('[placeholder]').forEach(el => {
+        if (t[el.placeholder]) el.placeholder = t[el.placeholder];
+      });
+      document.querySelector('button[type="submit"]').textContent = t['Save'];
+      document.getElementById('form-title').textContent = '📇 ' + t['Scraped Contacts'];
+      document.querySelectorAll('[data-i18n]').forEach(th => {
+        const key = th.getAttribute('data-i18n');
+        if (t[key]) th.textContent = t[key];
+      });
+    });
+
+    async function fetchContacts() {
+      const { data, error } = await supabase.from('scraped_contacts').select('*').limit(100);
+      const tbody = document.querySelector('#contactsTable tbody');
+      tbody.innerHTML = '';
+      if (data) {
+        data.forEach(row => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${row.company_name || ''}</td>
+            <td>${row.domain || ''}</td>
+            <td>${(row.email || []).join(', ')}</td>
+            <td>${(row.phone || []).join(', ')}</td>
+            <td>${row.language || ''}</td>
+            <td>${row.business_sect || ''}</td>
+            <td>${row.authorised_person || ''}</td>
+            <td>
+              <button class="btn update" onclick='editContact(${JSON.stringify(row)})'>✏️</button>
+              <button class="btn delete" onclick='deleteContact("${row.id}")'>🗑️</button>
+            </td>`;
+          tbody.appendChild(tr);
+        });
+      }
+    }
+
+    async function deleteContact(id) {
+      await supabase.from('scraped_contacts').delete().eq('id', id);
+      fetchContacts();
+    }
+
+    function editContact(data) {
+      for (let key in data) {
+        if (document.getElementById(key)) document.getElementById(key).value = Array.isArray(data[key]) ? data[key].join(', ') : data[key];
+      }
+    }
+
+    document.getElementById('contactForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = document.getElementById('id').value;
+      const payload = {
+        company_name: document.getElementById('company_name').value,
+        domain: document.getElementById('domain').value,
+        email: document.getElementById('email').value.split(',').map(e => e.trim()),
+        phone: document.getElementById('phone').value.split(',').map(p => p.trim()),
+        language: document.getElementById('language').value,
+        business_sect: document.getElementById('business_sect').value,
+        authorised_person: document.getElementById('authorised_person').value,
+      };
+      if (id) {
+        await supabase.from('scraped_contacts').update(payload).eq('id', id);
+      } else {
+        await supabase.from('scraped_contacts').insert([payload]);
+      }
+      document.getElementById('contactForm').reset();
+      fetchContacts();
+    });
+
+    fetchContacts();
+  </script>
+</body>
+</html>
