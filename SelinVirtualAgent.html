@@ -11,25 +11,25 @@
       height: 100%;
       width: 100%;
       overflow: hidden;
+      background-color: #fff;
     }
   </style>
 </head>
 <body>
 
-  <!-- حتماً این div با همین id باید وجود داشته باشه -->
+  <!-- این div باید دقیقاً وجود داشته باشد -->
   <div id="did-agent-container"></div>
 
-  <!-- این اسکریپت باید دقیقا این target-id رو داشته باشه -->
-<script type="module"
-      src="https://agent.d-id.com/v2/index.js"
-      data-mode="full"
-      data-client-key="Z29vZ2xlLW9hdXRoMnwxMTc2NDQxNDgzODkzNDQxNzIxNjc6RExqZ1huS0RqamxKOFNuV1pycmNJ"
-      data-agent-id="v2_agt_s2zt8n2S"
-      data-name="did-agent"
-      data-monitor="true"
-      data-target-id="<PLACE_YOUR_DIV_ID_HERE>">
-</script>
+  <!-- اسکریپت اصلاح‌شده -->
+  <script type="module"
+    src="https://agent.d-id.com/v2/index.js"
+    data-mode="full"
+    data-client-key="Z29vZ2xlLW9hdXRoMnwxMTc2NDQxNDgzODkzNDQxNzIxNjc6RExqZ1huS0RqamxKOFNuV1pycmNJ"
+    data-agent-id="v2_agt_s2zt8n2S"
+    data-name="did-agent"
+    data-monitor="true"
+    data-target-id="did-agent-container">
+  </script>
 
 </body>
 </html>
-
