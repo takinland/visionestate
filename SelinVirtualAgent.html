@@ -11,16 +11,23 @@
       height: 100%;
       width: 100%;
       overflow: hidden;
-      background-color: #fff;
+      background-color: #ffffff;
+    }
+
+    #selin-agent {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      z-index: 0;
     }
   </style>
 </head>
 <body>
 
-  <!-- این div باید دقیقاً وجود داشته باشد -->
-  <div id="did-agent-container"></div>
+  <!-- این div محل نمایش آواتار است -->
+  <div id="selin-agent"></div>
 
-  <!-- اسکریپت اصلاح‌شده -->
+  <!-- اسکریپت D-ID با اتصال به div بالا -->
   <script type="module"
     src="https://agent.d-id.com/v2/index.js"
     data-mode="full"
@@ -28,7 +35,7 @@
     data-agent-id="v2_agt_s2zt8n2S"
     data-name="did-agent"
     data-monitor="true"
-    data-target-id="did-agent-container">
+    data-target-id="selin-agent">
   </script>
 
 </body>
