@@ -58,8 +58,8 @@
       <option value="تهران" selected>تهران</option>
     </select>
 
-    <label>شهر:</label>
-    <input type="text" id="city" placeholder="مثلاً تهران">
+    <label>محله:</label>
+    <input type="text" id="district" placeholder="مثلاً تهران">
 
     <label>منطقه:</label>
     <select id="region">
@@ -88,10 +88,10 @@
       const file = document.getElementById("fileInput").files[0];
       const region = document.getElementById("region").value;
       const province = document.getElementById("province").value;
-      const city = document.getElementById("city").value.trim();
+      const district = document.getElementById("district").value.trim();
       const result = document.getElementById("result");
 
-      if (!file || !region || !province || !city) {
+      if (!file || !region || !province || !district) {
         alert("لطفاً همه فیلدها را پر کرده و فایل را انتخاب کنید.");
         return;
       }
@@ -102,7 +102,7 @@
       const data = lines.map(phone => ({
         phone_numbe: phone,
         province,
-        city,
+        district,
         region: parseInt(region),
         is_valid: true,
         is_unsubscribed: false
