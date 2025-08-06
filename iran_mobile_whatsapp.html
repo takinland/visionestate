@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <title>درج شماره‌ها در بانک</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 2em;
+      background: #f0f0f0;
+    }
+    label, select, input {
+      display: block;
+      margin-bottom: 1em;
+      width: 100%;
+      max-width: 400px;
+    }
+    button {
+      padding: 10px 20px;
+      background-color: #2a9d8f;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h2>📤 فرم ثبت شماره‌ها</h2>
+
+  <form id="uploadForm">
+<label>استان:
+  <select id="province" name="province" required>
+    <option value="">-- انتخاب کنید --</option>
+    <option>آذربایجان شرقی</option>
+    <option>آذربایجان غربی</option>
+    <option>اردبیل</option>
+    <option>اصفهان</option>
+    <option>ایلام</option>
+    <option>بوشهر</option>
+    <option>تهران</option>
+    <option>خراسان جنوبی</option>
+    <option>خراسان رضوی</option>
+    <option>خراسان شمالی</option>
+    <option>خوزستان</option>
+    <option>زنجان</option>
+    <option>سمنان</option>
+    <option>سیستان و بلوچستان</option>
+    <option>فارس</option>
+    <option>قزوین</option>
+    <option>قم</option>
+    <option>کردستان</option>
+    <option>کرمان</option>
+    <option>کرمانشاه</option>
+    <option>کهگیلویه و بویراحمد</option>
+    <option>گلستان</option>
+    <option>گیلان</option>
+    <option>لرستان</option>
+    <option>مازندران</option>
+    <option>مرکزی</option>
+    <option>هرمزگان</option>
+    <option>همدان</option>
+    <option>یزد</option>
+  </select>
+</label>
+
+
+    <label>شهر:
+      <input type="text" id="city" required />
+    </label>
+
+    <label>نوع خط:
+      <select id="lineType" required>
+        <option value="">-- انتخاب کنید --</option>
+        <option>postpaid</option>
+        <option>prepaid</option>
+      </select>
+    </label>
+
+    <label>آپلود فایل شماره‌ها (.txt):
+      <input type="file" id="fileInput" accept=".txt" required />
+    </label>
+
+    <button type="submit">📨 ثبت شماره‌ها</button>
+  </form>
+
+  <div id="status"></div>
+
+  <script>
+    const SUPABASE_URL = 'https://tdvimwqotnuvcdvhvbjj.supabase.co';
+    const SUPABASE_API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRkdmltd3FvdG51dmNkdmh2YmpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkxMDY2MjcsImV4cCI6MjA2NDY4MjYyN30.CWNPk-S-ECq0c1LRugDJYOchY3mgC2Zchyr8X8-mDeE';
+    const TABLE_NAME = 'iran_mobile_whatsapp_bank';
+
+    document.getElementById("uploadForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const province = document.getElementById("province").value;
+      const city = document.getElementById("city").value;
+      const lineType = document.getElementById("lineType").value;
+      const file = document.getElementById("fileInput").files[0];
+
+      if (!file) return alert("لطفاً یک فایل txt انتخاب کنید");
+
+      const text = await file.text();
+      const lines = text.split(/\r?\n/).filter(line => line.trim() !== '');
+
+      const payload = lines.map(number => ({
+        phone_number: number.trim(),
+        country: 'ایران',
+        province: province,
+        city: city,
+        line_type: lineType,
+        is_valid: true,
+        is_unsubscribed: false,
+        updated_at: new Date().toISOString(),
+        created_at: new Date().toISOString()
+      }));
+
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/${TABLE_NAME}`, {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_API_KEY,
+          'Authorization': `Bearer ${SUPABASE_API_KEY}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (res.ok) {
+        document.getElementById("status").innerText = `✅ ${payload.length} شماره با موفقیت ثبت شد.`;
+      } else {
+        const error = await res.text();
+        document.getElementById("status").innerText = `❌ خطا در ثبت اطلاعات: ${error}`;
+      }
+    });
+  </script>
+</body>
+</html>
