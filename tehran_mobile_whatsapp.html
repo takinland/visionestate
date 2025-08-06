@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <title>📥 فرم ثبت شماره‌ها</title>
+  <style>
+    body {
+      background-color: #f1f1f1;
+      font-family: Tahoma;
+      padding: 40px;
+      text-align: center;
+    }
+    .form-container {
+      background: #fff;
+      padding: 30px;
+      border-radius: 10px;
+      max-width: 400px;
+      margin: auto;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      text-align: right;
+    }
+    input, select, button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 15px;
+      font-size: 1em;
+    }
+    button {
+      background-color: #28a745;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #218838;
+    }
+    #result {
+      margin-top: 20px;
+      font-size: 1em;
+      color: #155724;
+      background-color: #d4edda;
+      padding: 10px;
+      border-radius: 5px;
+      display: none;
+    }
+    h2 {
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="form-container">
+    <h2>📥 فرم ثبت شماره‌ها</h2>
+
+    <label>استان:</label>
+    <select id="province">
+      <option value="">انتخاب استان</option>
+      <option value="تهران" selected>تهران</option>
+    </select>
+
+    <label>شهر:</label>
+    <input type="text" id="city" placeholder="مثلاً تهران">
+
+    <label>منطقه:</label>
+    <select id="region">
+      <option value="">انتخاب منطقه</option>
+    </select>
+
+    <label>آپلود فایل شماره‌ها (.txt):</label>
+    <input type="file" id="fileInput" accept=".txt">
+
+    <button onclick="submitNumbers()">ثبت شماره‌ها 🗃️</button>
+
+    <div id="result"></div>
+  </div>
+
+  <script>
+    // لیست مناطق 1 تا 22
+    const regionSelect = document.getElementById("region");
+    for (let i = 1; i <= 22; i++) {
+      const opt = document.createElement("option");
+      opt.value = i;
+      opt.textContent = i;
+      regionSelect.appendChild(opt);
+    }
+
+    async function submitNumbers() {
+      const file = document.getElementById("fileInput").files[0];
+      const region = document.getElementById("region").value;
+      const province = document.getElementById("province").value;
+      const city = document.getElementById("city").value.trim();
+      const result = document.getElementById("result");
+
+      if (!file || !region || !province || !city) {
+        alert("لطفاً همه فیلدها را پر کرده و فایل را انتخاب کنید.");
+        return;
+      }
+
+      const text = await file.text();
+      const lines = text.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+
+      const data = lines.map(phone => ({
+        phone_numbe: phone,
+        province,
+        city,
+        region: parseInt(region),
+        is_valid: true,
+        is_unsubscribed: false
+      }));
+
+      const SUPABASE_URL = 'https://tdvimwqotnuvcdvhvbjj.supabase.co';
+      const SUPABASE_API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRkdmltd3FvdG51dmNkdmh2YmpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkxMDY2MjcsImV4cCI6MjA2NDY4MjYyN30.CWNPk-S-ECq0c1LRugDJYOchY3mgC2Zchyr8X8-mDeE';
+      const TABLE_NAME = 'tehran_mobile_whatsapp_bank';
+      const CHUNK_SIZE = 500;
+      let successCount = 0;
+
+      for (let i = 0; i < data.length; i += CHUNK_SIZE) {
+        const chunk = data.slice(i, i + CHUNK_SIZE);
+
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/${TABLE_NAME}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": SUPABASE_API_KEY,
+            "Authorization": `Bearer ${SUPABASE_API_KEY}`,
+            "Prefer": "return=minimal"
+          },
+          body: JSON.stringify(chunk)
+        });
+
+        if (res.ok) {
+          successCount += chunk.length;
+        } else {
+          const errorText = await res.text();
+          alert("❌ خطا در ثبت داده‌ها:\n" + errorText);
+          return;
+        }
+      }
+
+      result.style.display = "block";
+      result.innerHTML = `✅ ${successCount} شماره با موفقیت ثبت شد.`;
+      document.getElementById("fileInput").value = "";
+      document.getElementById("region").value = "";
+    }
+  </script>
+</body>
+</html>
