@@ -63,7 +63,7 @@
     const supabase = createClient(supabaseUrl, supabaseKey)
 
     const tableName = 'email_groups'
-    const allFields = ['name', 'description', 'is_active', 'created_at']
+    const allFields = ['name', 'description']
 
     async function fetchData() {
       const { data, error } = await supabase.from(tableName).select('*')
@@ -104,35 +104,63 @@
         tableBody.innerHTML = `<tr><td colspan="${allFields.length}">📭 داده‌ای یافت نشد.</td></tr>`
         return
       }
+data.forEach(row => {
+  const tr = document.createElement('tr')
 
-      data.forEach(row => {
-        const tr = document.createElement('tr')
-        allFields.forEach(field => {
-          const td = document.createElement('td')
-          const input = document.createElement('input')
-          input.value = row[field] ?? ''
-          input.addEventListener('change', async () => {
-            const updated = { [field]: input.value }
-            await supabase.from(tableName).update(updated).eq('id', row.id)
-          })
-          td.appendChild(input)
-          tr.appendChild(td)
-        })
+  const rowInputs = {}
 
-        const delTd = document.createElement('td')
-        const delBtn = document.createElement('button')
-        delBtn.textContent = '🗑 حذف'
-        delBtn.onclick = async () => {
-          if (confirm('حذف این ردیف؟')) {
-            await supabase.from(tableName).delete().eq('id', row.id)
-            fetchData()
-          }
-        }
-        delTd.appendChild(delBtn)
-        tr.appendChild(delTd)
+  allFields.forEach(field => {
+    const td = document.createElement('td')
+    const input = document.createElement('input')
+    input.value = row[field] ?? ''
+    input.dataset.field = field
+    rowInputs[field] = input
+    td.appendChild(input)
+    tr.appendChild(td)
+  })
 
-        tableBody.appendChild(tr)
-      })
+  const actionsTd = document.createElement('td')
+
+  // دکمه بروزرسانی
+  const updateBtn = document.createElement('button')
+  updateBtn.textContent = '✏️ بروزرسانی'
+  updateBtn.onclick = async () => {
+    const updated = {}
+    allFields.forEach(field => {
+      updated[field] = rowInputs[field].value
+    })
+
+    const { error } = await supabase.from(tableName).update(updated).eq('id', row.id)
+    if (error) {
+      alert('❌ خطا در بروزرسانی: ' + error.message)
+      console.error(error)
+    } else {
+      alert('✅ بروزرسانی با موفقیت انجام شد')
+    }
+  }
+  actionsTd.appendChild(updateBtn)
+
+  // دکمه حذف
+  const delBtn = document.createElement('button')
+  delBtn.textContent = '🗑 حذف'
+  delBtn.style.marginRight = '10px'
+  delBtn.onclick = async () => {
+    if (confirm('حذف این ردیف؟')) {
+      const { error } = await supabase.from(tableName).delete().eq('id', row.id)
+      if (error) {
+        alert('❌ خطا در حذف: ' + error.message)
+        console.error(error)
+      } else {
+        tr.remove()
+      }
+    }
+  }
+  actionsTd.appendChild(delBtn)
+
+  tr.appendChild(actionsTd)
+  tableBody.appendChild(tr)
+})
+
 
       // فرم افزودن
       allFields.forEach(field => {
@@ -172,7 +200,12 @@
         record[key] = val
       }
 
-      await supabase.from(tableName).insert([record])
+      const { error } = await supabase.from(tableName).insert([record])
+if (error) {
+  alert('❌ خطا در درج داده: ' + error.message)
+  console.error(error)
+}
+
       form.reset()
       fetchData()
     })
