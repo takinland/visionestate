@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <title>بانک ایمیل ایران — فیلتر پیشرفته</title>
+  <style>
+    body{font-family:Tahoma,'Vazir',sans-serif;background:#f7f7f7;margin:0;padding:24px}
+    h2{margin:0 0 16px;text-align:center}
+    .panel{background:#fff;border:1px solid #e5e5e5;border-radius:12px;padding:16px;margin-bottom:16px}
+    .filters{display:grid;grid-template-columns:repeat(6,1fr);gap:12px}
+    .filters .wide{grid-column: span 2}
+    label{display:block;font-size:12px;margin-bottom:6px;color:#444}
+    input,select{width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;font-family:inherit}
+    .row{display:flex;gap:12px;align-items:center;justify-content:space-between;margin-top:12px}
+    .btn{padding:8px 14px;border:1px solid #ddd;background:#fff;border-radius:8px;cursor:pointer}
+    .btn.primary{background:#0ea5e9;border-color:#0ea5e9;color:#fff}
+    .btn:disabled{opacity:.6;cursor:not-allowed}
+    #status{font-size:12px;color:#666}
+    #error{white-space:pre-wrap;color:#b00020;background:#fff;border:1px dashed #b00020;border-radius:8px;padding:10px;display:none;margin-bottom:12px}
+    table{width:100%;border-collapse:collapse;background:#fff;border:1px solid #e5e5e5;border-radius:12px;overflow:hidden}
+    th,td{border-bottom:1px solid #eee;padding:8px 10px;text-align:right;font-size:13px}
+    th{background:#fafafa}
+    .badge{display:inline-block;background:#eef6ff;color:#0369a1;border:1px solid #cfe8ff;border-radius:999px;padding:4px 10px;font-size:12px}
+    .pagination{display:flex;gap:8px;align-items:center}
+  </style>
+</head>
+<body>
+  <h2>بانک ایمیل ایران — فیلتر پیشرفته</h2>
+
+  <div id="error"></div>
+
+  <div class="panel">
+    <div class="filters">
+      <div>
+        <label>ایمیل</label>
+        <input id="f_email" placeholder="مثال: @gmail.com یا ali@" />
+      </div>
+      <div>
+        <label>نام مخاطب (contact_person)</label>
+        <input id="f_contact" placeholder="مثال: Nader" />
+      </div>
+      <div>
+        <label>سازمان</label>
+        <input id="f_org" placeholder="مثال: Holding" />
+      </div>
+      <div>
+        <label>کشور</label>
+        <input id="f_country" placeholder="Iran / UAE / ..." />
+      </div>
+      <div>
+        <label>استان (provience)</label>
+        <input id="f_prov" placeholder="Tehran / ..."/>
+      </div>
+      <div>
+        <label>شهر</label>
+        <input id="f_city" placeholder="Tehran / Mashhad / ..." />
+      </div>
+
+      <div>
+        <label>منطقه (district)</label>
+        <input id="f_dist" placeholder="all / 1 / 6 ..." />
+      </div>
+      <div>
+        <label>گروه</label>
+        <select id="f_group">
+          <option value="">همه</option>
+        </select>
+      </div>
+      <div>
+        <label>منبع</label>
+        <select id="f_source">
+          <option value="">همه</option>
+        </select>
+      </div>
+      <div>
+        <label>فعال/غیرفعال</label>
+        <select id="f_active">
+          <option value="">همه</option>
+          <option value="true">فعال</option>
+          <option value="false">غیرفعال</option>
+        </select>
+      </div>
+      <div>
+        <label>Unsubscribed by</label>
+        <select id="f_unsub">
+          <option value="">همه</option>
+          <option value="admin">admin</option>
+          <option value="user">user</option>
+          <option value="NULL">بدون مقدار</option>
+        </select>
+      </div>
+      <div>
+        <label>تعداد ارسال (min - max)</label>
+        <div style="display:flex;gap:6px">
+          <input id="f_send_min" type="number" placeholder="min" />
+          <input id="f_send_max" type="number" placeholder="max" />
+        </div>
+      </div>
+
+      <div class="wide">
+        <label>یادداشت‌ها (notes)</label>
+        <input id="f_notes" placeholder="متن آزاد..." />
+      </div>
+
+      <div>
+        <label>از تاریخ ایجاد</label>
+        <input id="f_created_from" type="date" />
+      </div>
+      <div>
+        <label>تا تاریخ ایجاد</label>
+        <input id="f_created_to" type="date" />
+      </div>
+      <div>
+        <label>از آخرین ارسال</label>
+        <input id="f_last_from" type="date" />
+      </div>
+      <div>
+        <label>تا آخرین ارسال</label>
+        <input id="f_last_to" type="date" />
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="badge">تعداد نتایج: <span id="count">0</span></div>
+      <div>
+        <button class="btn" id="btnReset">ریست فیلترها</button>
+        <button class="btn primary" id="btnApply">اعمال فیلتر</button>
+      </div>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <div id="status">⏳ آماده</div>
+      <div class="pagination">
+        <button class="btn" id="prevBtn">قبلی</button>
+        <span class="badge">صفحه: <span id="pageInfo">1</span></span>
+        <button class="btn" id="nextBtn">بعدی</button>
+        <select id="pageSize" class="btn">
+          <option value="10">۱۰</option>
+          <option value="25" selected>۲۵</option>
+          <option value="50">۵۰</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>ایمیل</th>
+        <th>نام</th>
+        <th>گروه</th>
+        <th>منبع</th>
+        <th>فعال</th>
+        <th>ارسال‌ها</th>
+        <th>آخرین ارسال</th>
+        <th>سازمان</th>
+        <th>کشور/استان/شهر/ناحیه</th>
+        <th>ایجاد</th>
+        <th>Unsub by</th>
+        <th>یادداشت</th>
+      </tr>
+    </thead>
+    <tbody id="tbody">
+      <tr><td colspan="12">⏳ در حال بارگذاری…</td></tr>
+    </tbody>
+  </table>
+
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
+
+    // 🔑 آدرس و کلید پروژه خودت
+    const supabaseUrl = 'https://tdvimwqotnuvcdvhvbjj.supabase.co'
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRkdmltd3FvdG51dmNkdmh2YmpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkxMDY2MjcsImV4cCI6MjA2NDY4MjYyN30.CWNPk-S-ECq0c1LRugDJYOchY3mgC2Zchyr8X8-mDeE'
+    const supabase = createClient(supabaseUrl, supabaseKey, { auth: { persistSession: false } })
+
+    const tableName = 'iran_emails_bank'
+    const tbody = document.getElementById('tbody')
+    const statusEl = document.getElementById('status')
+    const errorBox = document.getElementById('error')
+    const countEl = document.getElementById('count')
+    const pageInfo = document.getElementById('pageInfo')
+    const pageSizeSel = document.getElementById('pageSize')
+
+    let page = 1
+    let totalRows = 0
+
+    const $ = id => document.getElementById(id)
+
+    function showError(msg, err) {
+      console.error(msg, err)
+      errorBox.style.display = 'block'
+      errorBox.textContent = `${msg}\n${err?.message || err || ''}`
+      statusEl.textContent = '❌ خطا'
+    }
+
+    async function loadOptions() {
+      // گروه‌ها
+      const g = await supabase.from('email_groups').select('id,name').order('id',{ascending:true})
+      if (!g.error) g.data.forEach(x => {
+        const o = document.createElement('option'); o.value = x.id; o.textContent = `${x.id} — ${x.name}`
+        $('f_group').appendChild(o)
+      })
+      // منابع
+      const s = await supabase.from('email_sources').select('id,name').order('id',{ascending:true})
+      if (!s.error) s.data.forEach(x => {
+        const o = document.createElement('option'); o.value = x.id; o.textContent = `${x.id} — ${x.name}`
+        $('f_source').appendChild(o)
+      })
+    }
+
+    function applyFiltersTo(query) {
+      const email = $('f_email').value.trim()
+      const contact = $('f_contact').value.trim()
+      const org = $('f_org').value.trim()
+      const country = $('f_country').value.trim()
+      const prov = $('f_prov').value.trim()
+      const city = $('f_city').value.trim()
+      const dist = $('f_dist').value.trim()
+      const group = $('f_group').value
+      const source = $('f_source').value
+      const active = $('f_active').value
+      const unsub = $('f_unsub').value
+      const notes = $('f_notes').value.trim()
+      const sendMin = $('f_send_min').value
+      const sendMax = $('f_send_max').value
+      const createdFrom = $('f_created_from').value
+      const createdTo = $('f_created_to').value
+      const lastFrom = $('f_last_from').value
+      const lastTo = $('f_last_to').value
+
+      if (email)   query = query.ilike('email', `%${email}%`)
+      if (contact) query = query.ilike('contact_person', `%${contact}%`)
+      if (org)     query = query.ilike('organization', `%${org}%`)
+      if (country) query = query.ilike('country', `%${country}%`)
+      if (prov)    query = query.ilike('provience', `%${prov}%`)
+      if (city)    query = query.ilike('city', `%${city}%`)
+      if (dist)    query = query.ilike('district', `%${dist}%`)
+      if (notes)   query = query.ilike('notes', `%${notes}%`)
+
+      if (group)   query = query.eq('group_id', Number(group))
+      if (source)  query = query.eq('source_id', Number(source))
+
+      if (active !== '') query = query.eq('is_active', active === 'true')
+
+      if (unsub === 'admin' || unsub === 'user') query = query.eq('unsubscribed_by', unsub)
+      if (unsub === 'NULL') query = query.is('unsubscribed_by', null)
+
+      if (sendMin) query = query.gte('send_count', Number(sendMin))
+      if (sendMax) query = query.lte('send_count', Number(sendMax))
+
+      if (createdFrom) query = query.gte('created_at', new Date(createdFrom).toISOString())
+      if (createdTo)   query = query.lte('created_at', new Date(new Date(createdTo).getTime()+86400000-1).toISOString())
+
+      if (lastFrom)    query = query.gte('last_sent_at', new Date(lastFrom).toISOString())
+      if (lastTo)      query = query.lte('last_sent_at', new Date(new Date(lastTo).getTime()+86400000-1).toISOString())
+
+      return query
+    }
+
+    async function fetchCount() {
+      let q = supabase.from(tableName).select('*', { count: 'exact', head: true })
+      q = applyFiltersTo(q)
+      const { count, error } = await q
+      if (error) { showError('خطا در محاسبه تعداد نتایج', error); return 0 }
+      return count ?? 0
+    }
+
+    async function fetchPage() {
+      statusEl.textContent = '⏳ واکشی داده…'
+      const size = Number(pageSizeSel.value)
+      const from = (page - 1) * size
+      const to = from + size - 1
+
+      let q = supabase.from(tableName)
+        .select('id,email,contact_person,group_id,source_id,is_active,send_count,last_sent_at,organization,country,provience,city,district,created_at,unsubscribed_by', { count: 'exact' })
+        .order('created_at', { ascending: false })
+        .range(from, to)
+
+      q = applyFiltersTo(q)
+
+      const { data, count, error } = await q
+      if (error) return showError('خطا در واکشی داده‌ها', error)
+
+      totalRows = count ?? 0
+      countEl.textContent = totalRows
+      pageInfo.textContent = page
+
+      renderRows(data || [])
+      statusEl.textContent = '✅ آماده'
+    }
+
+    function renderRows(rows) {
+      if (!rows.length) {
+        tbody.innerHTML = `<tr><td colspan="12">📭 داده‌ای برای نمایش نیست.</td></tr>`
+        return
+      }
+      tbody.innerHTML = rows.map(r => `
+        <tr>
+          <td>${r.email ?? ''}</td>
+          <td>${r.contact_person ?? ''}</td>
+          <td>${r.group_id ?? ''}</td>
+          <td>${r.source_id ?? ''}</td>
+          <td>${r.is_active ? '✅' : '⛔'}</td>
+          <td>${r.send_count ?? 0}</td>
+          <td>${r.last_sent_at ? new Date(r.last_sent_at).toLocaleString() : '-'}</td>
+          <td>${r.organization ?? ''}</td>
+          <td>${[r.country,r.provience,r.city,r.district].filter(Boolean).join(' / ')}</td>
+          <td>${r.created_at ? new Date(r.created_at).toLocaleString() : ''}</td>
+          <td>${r.unsubscribed_by ?? ''}</td>
+          <td>${r.notes ?? ''}</td>
+        </tr>
+      `).join('')
+    }
+
+    async function applyFilters() {
+      errorBox.style.display = 'none'
+      page = 1
+      countEl.textContent = '…'
+      await fetchPage()
+    }
+
+    // رویدادها
+    document.getElementById('btnApply').addEventListener('click', applyFilters)
+    document.getElementById('btnReset').addEventListener('click', () => {
+      document.querySelectorAll('.filters input, .filters select').forEach(el => el.value = '')
+      page = 1
+      fetchPage()
+    })
+    document.getElementById('prevBtn').addEventListener('click', () => {
+      if (page > 1) { page--; fetchPage() }
+    })
+    document.getElementById('nextBtn').addEventListener('click', () => {
+      const size = Number(pageSizeSel.value)
+      if (page * size < totalRows) { page++; fetchPage() }
+    })
+    pageSizeSel.addEventListener('change', () => { page = 1; fetchPage() })
+
+    // شروع
+    await loadOptions()
+    await fetchPage()
+  </script>
+</body>
+</html>
