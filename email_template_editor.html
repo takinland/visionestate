@@ -4,25 +4,25 @@
   <meta charset="utf-8">
   <title>ادیتور قالب ایمیل</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <!-- فقط CSS لازم است؛ JSها را پایین با ESM ایمپورت می‌کنیم -->
+  <!-- جلوگیری از 404 favicon -->
+  <link rel="icon" href="data:,">
   <link href="https://cdn.jsdelivr.net/npm/grapesjs@0.21.8/dist/css/grapes.min.css" rel="stylesheet">
   <style>
     body { margin:0; font-family: Tahoma,'Vazir',sans-serif; }
     .topbar{display:flex;gap:8px;align-items:center;padding:8px;background:#0f172a;color:#fff}
     .topbar select,.topbar input,.topbar button{padding:6px;border-radius:6px;border:1px solid #334155}
-    .badge{margin-left:auto;opacity:.9} /* چون RTL هست، این سمت چپ میره */
-    /* داک سمت راست برای بلوک‌ها */
+    .badge{margin-left:auto;opacity:.9}
     #dock{position:fixed;top:52px;bottom:0;right:0;width:300px;background:#0b1220;color:#e5e7eb;border-left:1px solid #1f2937;overflow:auto;z-index:10}
     #dock header{position:sticky;top:0;background:#0b1220;padding:8px 10px;border-bottom:1px solid #1f2937;display:flex;justify-content:space-between;align-items:center}
     #blocks{padding:8px}
-    /* بوم ادیتور: جای خالی سمت راست بده */
     #gjs{height: calc(100vh - 52px); margin-right:300px;}
     .hidden{display:none}
+    .gjs-block { direction: rtl; }
   </style>
 </head>
 <body>
   <div class="topbar">
-    <button id="btnToggleDock" title="نمایش/مخفی‌کردن بلوک‌ها">📦 Blocks</button>
+    <button id="btnToggleDock">📦 Blocks</button>
     <button id="btnExport">⬇️ خروجی HTML</button>
     <button id="btnPreview">👁 پیش‌نمایش</button>
     <button id="btnSave">💾 ذخیره</button>
@@ -43,7 +43,6 @@
     <span class="badge">🧩 ادیتور قالب ایمیل</span>
   </div>
 
-  <!-- پنل کناری بلوک‌ها (سمت راست) -->
   <aside id="dock">
     <header>
       <strong>بلوک‌ها</strong>
@@ -54,67 +53,146 @@
 
   <div id="gjs"></div>
 
-  <!-- نسخه ماژولی با دو پلاگین: Newsletter + Basic Blocks -->
   <script type="module">
     import grapesjs from 'https://cdn.jsdelivr.net/npm/grapesjs@0.21.8/+esm'
-    import gjsNewsletter from 'https://cdn.jsdelivr.net/npm/grapesjs-preset-newsletter@1.0.1/+esm'
-    import gjsBasic from 'https://cdn.jsdelivr.net/npm/grapesjs-blocks-basic@1.0.2/+esm'
     import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
 
-    // Supabase (کلید/آدرس پروژه خودت)
+    // Supabase
     const supabase = createClient(
       'https://tdvimwqotnuvcdvhvbjj.supabase.co',
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRkdmltd3FvdG51dmNkdmh2YmpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkxMDY2MjcsImV4cCI6MjA2NDY4MjYyN30.CWNPk-S-ECq0c1LRugDJYOchY3mgC2Zchyr8X8-mDeE',
       { auth: { persistSession: false } }
     );
 
-    // ادیتور
+    // Editor (بدون استایل خارجی برای پرهیز از تداخل)
     const editor = grapesjs.init({
       container: '#gjs',
       height: '100%',
       storageManager: false,
-      // هر دو پلاگین را فعال کن
-      plugins: [gjsNewsletter, gjsBasic],
-      pluginsOpts: {
-        [gjsBasic.name]: {
-          flexGrid: true,
-          // می‌تونی با blocks[] مشخص کنی کدام‌ها باشند؛ خالی بگذاری یعنی همهٔ پیش‌فرض‌ها
-          // blocks: ['column1','column2','column3','text','image','link','video','list','quote','button','divider'],
-        },
-      }
     });
 
-    // رندر لیست بلاک‌ها داخل داک سمت راست
+    const bm = editor.BlockManager;
+
+    // --- تعریف بلوک‌ها (اول اضافه می‌کنیم) ---
+    bm.add('section', {
+      label: 'Section',
+      category: 'Layout',
+      content: `<section style="max-width:600px;margin:0 auto;padding:20px;background:#ffffff">
+        <h2 style="margin:0 0 10px">عنوان بخش</h2>
+        <p>این یک متن نمونه است.</p>
+      </section>`
+    });
+
+    bm.add('two-cols', {
+      label: '۲ ستونه',
+      category: 'Layout',
+      content: `
+      <table role="presentation" width="100%" style="max-width:600px;margin:0 auto;background:#ffffff">
+        <tr>
+          <td style="width:50%;padding:10px;vertical-align:top"><p>ستون ۱</p></td>
+          <td style="width:50%;padding:10px;vertical-align:top"><p>ستون ۲</p></td>
+        </tr>
+      </table>`
+    });
+
+    bm.add('three-cols', {
+      label: '۳ ستونه',
+      category: 'Layout',
+      content: `
+      <table role="presentation" width="100%" style="max-width:600px;margin:0 auto;background:#ffffff">
+        <tr>
+          <td style="width:33.3%;padding:10px;vertical-align:top"><p>۱</p></td>
+          <td style="width:33.3%;padding:10px;vertical-align:top"><p>۲</p></td>
+          <td style="width:33.3%;padding:10px;vertical-align:top"><p>۳</p></td>
+        </tr>
+      </table>`
+    });
+
+    bm.add('text', {
+      label: 'متن',
+      category: 'Content',
+      content: `<div data-gjs-type="text" style="font-size:16px;line-height:1.6">یک متن نمونه…</div>`
+    });
+
+    bm.add('image', {
+      label: 'تصویر',
+      category: 'Content',
+      content: `<img src="https://via.placeholder.com/600x200?text=Image" alt="image" style="max-width:100%;display:block;margin:0 auto">`
+    });
+
+    bm.add('button', {
+      label: 'دکمه',
+      category: 'Content',
+      content: `<a href="#" style="display:inline-block;background:#2563eb;color:#fff;text-decoration:none;padding:10px 16px;border-radius:6px">Call To Action</a>`
+    });
+
+    bm.add('divider', {
+      label: 'Divider',
+      category: 'Content',
+      content: `<hr style="border:none;border-top:1px solid #e5e7eb;margin:16px 0">`
+    });
+
+    bm.add('spacer', {
+      label: 'Spacer',
+      category: 'Content',
+      content: `<div style="height:24px"></div>`
+    });
+
+    bm.add('hero', {
+      label: 'هرو (سربرگ)',
+      category: 'Sections',
+      content: `
+      <table role="presentation" width="100%" style="max-width:600px;margin:0 auto;background:#ffffff">
+        <tr><td style="padding:0">
+          <img src="https://via.placeholder.com/600x220?text=Hero" style="width:100%;display:block" alt="">
+        </td></tr>
+        <tr><td style="padding:16px 20px">
+          <h1 style="margin:0 0 10px">سلام {{contact_person}} عزیز</h1>
+          <p>به {{organization}} خوش آمدید.</p>
+          <a href="#" style="display:inline-block;background:#10b981;color:#fff;padding:10px 16px;border-radius:6px;text-decoration:none">بزن بریم</a>
+        </td></tr>
+      </table>`
+    });
+
+    bm.add('footer', {
+      label: 'فوتر',
+      category: 'Sections',
+      content: `
+      <table role="presentation" width="100%" style="max-width:600px;margin:0 auto;background:#f8fafc">
+        <tr><td style="padding:12px 16px;text-align:center;font-size:12px;color:#64748b">
+          این ایمیل به آدرس {{email}} ارسال شده است.
+          <br>
+          <a href="#" style="color:#0ea5e9;text-decoration:none">Unsubscribe</a> | <a href="#" style="color:#0ea5e9;text-decoration:none">View in browser</a>
+        </td></tr>
+      </table>`
+    });
+
+    // --- حالا پنل بلاک‌ها را رندر کن (بعد از add) ---
     const blocksEl = document.getElementById('blocks');
     editor.BlockManager.render(blocksEl);
 
-    // باز/بسته کردن داک
+    // داک: باز/بسته
     const dock = document.getElementById('dock');
     const gjs = document.getElementById('gjs');
-    document.getElementById('btnHideDock').onclick = () => {
-      dock.classList.add('hidden');
-      gjs.style.marginRight = '0px';
-    };
+    document.getElementById('btnHideDock').onclick = () => { dock.classList.add('hidden'); gjs.style.marginRight = '0'; };
     document.getElementById('btnToggleDock').onclick = () => {
       const hidden = dock.classList.toggle('hidden');
-      gjs.style.marginRight = hidden ? '0px' : '300px';
+      gjs.style.marginRight = hidden ? '0' : '300px';
     };
 
-    // درج متغیر در عنصر انتخاب‌شده (یا افزودن پاراگراف جدید)
+    // درج متغیر
     document.getElementById('btnInsertVar').onclick = () => {
       const val = document.getElementById('varList').value;
       const comp = editor.getSelected();
-      if (comp) comp.append(`<span>${val}</span>`);
-      else editor.getWrapper().append(`<p>${val}</p>`);
+      if (comp) comp.append(`<span>${val}</span>`); else editor.getWrapper().append(`<p>${val}</p>`);
     };
 
-    // --- CRUD تمپلیت‌ها
+    // --- Templates CRUD (Supabase)
     async function loadTemplates() {
       const { data, error } = await supabase
         .from('email_templates')
         .select('id,name')
         .order('updated_at', { ascending: false });
-
       const sel = document.getElementById('tplList');
       sel.innerHTML = `<option value="">[جدید]</option>`;
       if (!error && data) data.forEach(t => {
@@ -125,9 +203,7 @@
     async function loadTemplate(id) {
       if (!id) { editor.setComponents(''); document.getElementById('tplName').value = ''; return; }
       const { data, error } = await supabase
-        .from('email_templates')
-        .select('name, html')
-        .eq('id', id).single();
+        .from('email_templates').select('name, html').eq('id', id).single();
       if (error) return alert('خطا در لود تمپلیت: ' + error.message);
       document.getElementById('tplName').value = data.name;
       editor.setComponents(data.html);
@@ -138,43 +214,35 @@
       if (!name) return alert('نام تمپلیت را وارد کن');
       const html = editor.getHtml();
       const vars = Array.from(new Set([...html.matchAll(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g)].map(m => m[0])));
-
       const id = document.getElementById('tplList').value || null;
+
       if (id) {
         const { error } = await supabase.from('email_templates').update({ name, html, variables: vars }).eq('id', id);
         if (error) return alert('❌ خطا در بروزرسانی: ' + error.message);
       } else {
         const slug = name.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9\-]/g,'');
-        const { data, error } = await supabase
-          .from('email_templates')
-          .insert([{ name, slug, html, variables: vars }])
-          .select('id').single();
+        const { data, error } = await supabase.from('email_templates')
+          .insert([{ name, slug, html, variables: vars }]).select('id').single();
         if (error) return alert('❌ خطا در ذخیره: ' + error.message);
         document.getElementById('tplList').value = data.id;
       }
-      alert('✅ ذخیره شد');
-      loadTemplates();
+      alert('✅ ذخیره شد'); loadTemplates();
     }
 
     document.getElementById('btnSave').onclick = saveTemplate;
     document.getElementById('tplList').addEventListener('change', e => loadTemplate(e.target.value));
 
-    // پیش‌نمایش
+    // Preview & Export
     document.getElementById('btnPreview').onclick = () => {
-      const w = window.open('about:blank','preview');
-      w.document.open(); w.document.write(editor.getHtml()); w.document.close();
+      const w = window.open('about:blank','preview'); w.document.open(); w.document.write(editor.getHtml()); w.document.close();
     };
-
-    // خروجی HTML
     document.getElementById('btnExport').onclick = () => {
       const blob = new Blob([editor.getHtml()], { type: 'text/html;charset=utf-8' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = (document.getElementById('tplName').value || 'template') + '.html';
-      a.click();
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+      a.download = (document.getElementById('tplName').value || 'template') + '.html'; a.click();
     };
 
-    // شروع
+    // Start
     await loadTemplates();
   </script>
 </body>
