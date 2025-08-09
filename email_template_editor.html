@@ -12,11 +12,22 @@
     .topbar{display:flex;gap:8px;align-items:center;padding:8px;background:#0f172a;color:#fff}
     .topbar select,.topbar input,.topbar button{padding:6px;border-radius:6px;border:1px solid #334155}
     .badge{margin-left:auto;opacity:.9}
-    #gjs{height:calc(100vh - 52px)}
-    /* پنل پیش‌فرض Blocks را ببریم سمت راست */
-    .gjs-pn-views-container{left:auto !important; right:0 !important;}
-    .gjs-pn-views{flex-direction:row-reverse;}
-    .gjs-blocks-c{direction:rtl;}
+
+    /* بوم ادیتور */
+    #gjs{ height: calc(100vh - 52px); margin-right: 320px; }
+
+    /* پنل پیش‌فرض Blocks را به راست منتقل و ثابت کن */
+    .gjs-pn-views-container{
+      position: fixed !important;
+      top: 52px; bottom: 0;
+      right: 0; left: auto !important;
+      width: 320px;
+      background:#0b1220; color:#e5e7eb;
+      border-left:1px solid #1f2937;
+      overflow:auto; z-index: 10;
+    }
+    .gjs-pn-views{ flex-direction:row-reverse; }
+    .gjs-blocks-c{ direction: rtl; }
   </style>
 </head>
 <body>
@@ -54,54 +65,69 @@
       { auth: { persistSession: false } }
     );
 
-    // ادیتور (بدون render سفارشی)
+    // ادیتور
     const editor = grapesjs.init({
       container: '#gjs',
       height: '100%',
       storageManager: false,
     });
 
-    // بلاک‌های پایه (خودمان تعریف می‌کنیم تا همیشه موجود باشند)
+    // بلاک‌های پایه (fallback)
     const bm = editor.BlockManager;
-    bm.add('section', { label:'Section', category:'Layout',
-      content:`<section style="max-width:600px;margin:0 auto;padding:20px;background:#ffffff">
-        <h2 style="margin:0 0 10px">عنوان بخش</h2><p>این یک متن نمونه است.</p></section>`});
-    bm.add('two-cols',{label:'۲ ستونه',category:'Layout',
-      content:`<table role="presentation" width="100%" style="max-width:600px;margin:0 auto;background:#fff"><tr>
-      <td style="width:50%;padding:10px;vertical-align:top"><p>ستون ۱</p></td>
-      <td style="width:50%;padding:10px;vertical-align:top"><p>ستون ۲</p></td></tr></table>`});
-    bm.add('three-cols',{label:'۳ ستونه',category:'Layout',
-      content:`<table role="presentation" width="100%" style="max-width:600px;margin:0 auto;background:#fff"><tr>
-      <td style="width:33.3%;padding:10px;vertical-align:top"><p>۱</p></td>
-      <td style="width:33.3%;padding:10px;vertical-align:top"><p>۲</p></td>
-      <td style="width:33.3%;padding:10px;vertical-align:top"><p>۳</p></td></tr></table>`});
-    bm.add('text',{label:'متن',category:'Content',
-      content:`<div data-gjs-type="text" style="font-size:16px;line-height:1.6">یک متن نمونه…</div>`});
-    bm.add('image',{label:'تصویر',category:'Content',
-      content:`<img src="https://via.placeholder.com/600x200?text=Image" alt="image" style="max-width:100%;display:block;margin:0 auto">`});
-    bm.add('button',{label:'دکمه',category:'Content',
-      content:`<a href="#" style="display:inline-block;background:#2563eb;color:#fff;text-decoration:none;padding:10px 16px;border-radius:6px">Call To Action</a>`});
-    bm.add('divider',{label:'Divider',category:'Content',
-      content:`<hr style="border:none;border-top:1px solid #e5e7eb;margin:16px 0">`});
-    bm.add('spacer',{label:'Spacer',category:'Content',content:`<div style="height:24px"></div>`});
-    bm.add('hero',{label:'هرو (سربرگ)',category:'Sections',
-      content:`<table role="presentation" width="100%" style="max-width:600px;margin:0 auto;background:#ffffff">
-      <tr><td style="padding:0">
-      <img src="https://via.placeholder.com/600x220?text=Hero" style="width:100%;display:block" alt=""></td></tr>
-      <tr><td style="padding:16px 20px"><h1 style="margin:0 0 10px">سلام {{contact_person}} عزیز</h1>
-      <p>به {{organization}} خوش آمدید.</p>
-      <a href="#" style="display:inline-block;background:#10b981;color:#fff;padding:10px 16px;border-radius:6px;text-decoration:none">بزن بریم</a>
-      </td></tr></table>`});
-    bm.add('footer',{label:'فوتر',category:'Sections',
-      content:`<table role="presentation" width="100%" style="max-width:600px;margin:0 auto;background:#f8fafc">
-      <tr><td style="padding:12px 16px;text-align:center;font-size:12px;color:#64748b">
-      این ایمیل به آدرس {{email}} ارسال شده است.<br>
-      <a href="#" style="color:#0ea5e9;text-decoration:none">Unsubscribe</a> |
-      <a href="#" style="color:#0ea5e9;text-decoration:none">View in browser</a>
-      </td></tr></table>`});
+    function ensureBaseBlocks(){
+      if (bm.getAll().length > 0) return;
+      bm.add('section',{label:'Section',category:'Layout',
+        content:`<section style="max-width:600px;margin:0 auto;padding:20px;background:#ffffff">
+          <h2 style="margin:0 0 10px">عنوان بخش</h2><p>این یک متن نمونه است.</p></section>`});
+      bm.add('two-cols',{label:'۲ ستونه',category:'Layout',
+        content:`<table role="presentation" width="100%" style="max-width:600px;margin:0 auto;background:#fff"><tr>
+        <td style="width:50%;padding:10px;vertical-align:top"><p>ستون ۱</p></td>
+        <td style="width:50%;padding:10px;vertical-align:top"><p>ستون ۲</p></td></tr></table>`});
+      bm.add('three-cols',{label:'۳ ستونه',category:'Layout',
+        content:`<table role="presentation" width="100%" style="max-width:600px;margin:0 auto;background:#fff"><tr>
+        <td style="width:33.3%;padding:10px;vertical-align:top"><p>۱</p></td>
+        <td style="width:33.3%;padding:10px;vertical-align:top"><p>۲</p></td>
+        <td style="width:33.3%;padding:10px;vertical-align:top"><p>۳</p></td></tr></table>`});
+      bm.add('text',{label:'متن',category:'Content',
+        content:`<div data-gjs-type="text" style="font-size:16px;line-height:1.6">یک متن نمونه…</div>`});
+      bm.add('image',{label:'تصویر',category:'Content',
+        content:`<img src="https://via.placeholder.com/600x200?text=Image" alt="image" style="max-width:100%;display:block;margin:0 auto">`});
+      bm.add('button',{label:'دکمه',category:'Content',
+        content:`<a href="#" style="display:inline-block;background:#2563eb;color:#fff;text-decoration:none;padding:10px 16px;border-radius:6px">Call To Action</a>`});
+      bm.add('divider',{label:'Divider',category:'Content',
+        content:`<hr style="border:none;border-top:1px solid #e5e7eb;margin:16px 0">`});
+      bm.add('spacer',{label:'Spacer',category:'Content',
+        content:`<div style="height:24px"></div>`});
+      bm.add('hero',{label:'هرو (سربرگ)',category:'Sections',
+        content:`<table role="presentation" width="100%" style="max-width:600px;margin:0 auto;background:#ffffff">
+        <tr><td style="padding:0"><img src="https://via.placeholder.com/600x220?text=Hero" style="width:100%;display:block" alt=""></td></tr>
+        <tr><td style="padding:16px 20px"><h1 style="margin:0 0 10px">سلام {{contact_person}} عزیز</h1>
+        <p>به {{organization}} خوش آمدید.</p>
+        <a href="#" style="display:inline-block;background:#10b981;color:#fff;padding:10px 16px;border-radius:6px;text-decoration:none">بزن بریم</a>
+        </td></tr></table>`});
+      bm.add('footer',{label:'فوتر',category:'Sections',
+        content:`<table role="presentation" width="100%" style="max-width:600px;margin:0 auto;background:#f8fafc">
+        <tr><td style="padding:12px 16px;text-align:center;font-size:12px;color:#64748b">
+        این ایمیل به آدرس {{email}} ارسال شده است.<br>
+        <a href="#" style="color:#0ea5e9;text-decoration:none">Unsubscribe</a> |
+        <a href="#" style="color:#0ea5e9;text-decoration:none">View in browser</a>
+        </td></tr></table>`});
+    }
 
-    // پنل Blocks پیش‌فرض را باز کن (که خودش مدیریت رندر را انجام می‌دهد)
-    editor.Panels.getButton('views', 'open-blocks')?.set('active', true);
+    // پنل Blocks را سمت راست و باز نگه دار
+    function openBlocksPanel(){
+      const pn = editor.Panels.getPanel('views');
+      pn && pn.set('visible', true);
+      const btn = editor.Panels.getButton('views','open-blocks');
+      btn && btn.set('active', true);
+    }
+
+    editor.on('load', () => {
+      ensureBaseBlocks();
+      openBlocksPanel();
+    });
+    // در صورت تأخیر رندر، دوباره تلاش کن
+    setTimeout(openBlocksPanel, 0);
 
     // درج متغیر
     document.getElementById('btnInsertVar').onclick = () => {
@@ -112,7 +138,9 @@
 
     // Supabase: CRUD تمپلیت‌ها
     async function loadTemplates() {
-      const { data, error } = await supabase.from('email_templates').select('id,name').order('updated_at', { ascending:false });
+      const { data, error } = await supabase
+        .from('email_templates').select('id,name')
+        .order('updated_at', { ascending:false });
       const sel = document.getElementById('tplList');
       sel.innerHTML = `<option value="">[جدید]</option>`;
       if (!error && data) data.forEach(t => {
@@ -121,7 +149,8 @@
     }
     async function loadTemplate(id) {
       if (!id) { editor.setComponents(''); document.getElementById('tplName').value=''; return; }
-      const { data, error } = await supabase.from('email_templates').select('name,html').eq('id',id).single();
+      const { data, error } = await supabase
+        .from('email_templates').select('name,html').eq('id',id).single();
       if (error) return alert('خطا در لود تمپلیت: '+error.message);
       document.getElementById('tplName').value = data.name;
       editor.setComponents(data.html);
@@ -137,7 +166,8 @@
         if (error) return alert('❌ خطا در بروزرسانی: '+error.message);
       } else {
         const slug = name.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9\-]/g,'');
-        const { data, error } = await supabase.from('email_templates').insert([{ name, slug, html, variables: vars }]).select('id').single();
+        const { data, error } = await supabase.from('email_templates')
+          .insert([{ name, slug, html, variables: vars }]).select('id').single();
         if (error) return alert('❌ خطا در ذخیره: '+error.message);
         document.getElementById('tplList').value = data.id;
       }
