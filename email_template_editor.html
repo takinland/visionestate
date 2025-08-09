@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <title>ادیتور قالب ایمیل</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- فقط CSS لازم است؛ JSها را پایین با ESM ایمپورت می‌کنیم -->
+  <link href="https://cdn.jsdelivr.net/npm/grapesjs@0.21.8/dist/css/grapes.min.css" rel="stylesheet">
+  <style>
+    body { margin:0; font-family: Tahoma,'Vazir',sans-serif; }
+    .topbar{display:flex;gap:8px;align-items:center;padding:8px;background:#0f172a;color:#fff}
+    .topbar select,.topbar input,.topbar button{padding:6px;border-radius:6px;border:1px solid #334155}
+    .badge{margin-left:auto;opacity:.9} /* چون RTL هست، این سمت چپ میره */
+    /* داک سمت راست برای بلوک‌ها */
+    #dock{position:fixed;top:52px;bottom:0;right:0;width:300px;background:#0b1220;color:#e5e7eb;border-left:1px solid #1f2937;overflow:auto;z-index:10}
+    #dock header{position:sticky;top:0;background:#0b1220;padding:8px 10px;border-bottom:1px solid #1f2937;display:flex;justify-content:space-between;align-items:center}
+    #blocks{padding:8px}
+    /* بوم ادیتور: جای خالی سمت راست بده */
+    #gjs{height: calc(100vh - 52px); margin-right:300px;}
+    .hidden{display:none}
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <button id="btnToggleDock" title="نمایش/مخفی‌کردن بلوک‌ها">📦 Blocks</button>
+    <button id="btnExport">⬇️ خروجی HTML</button>
+    <button id="btnPreview">👁 پیش‌نمایش</button>
+    <button id="btnSave">💾 ذخیره</button>
+    <label>درج متغیر:</label>
+    <select id="varList">
+      <option value="{{contact_person}}">{{contact_person}}</option>
+      <option value="{{organization}}">{{organization}}</option>
+      <option value="{{country}}">{{country}}</option>
+      <option value="{{provience}}">{{provience}}</option>
+      <option value="{{city}}">{{city}}</option>
+      <option value="{{district}}">{{district}}</option>
+      <option value="{{email}}">{{email}}</option>
+    </select>
+    <button id="btnInsertVar">➕ درج</button>
+    <input id="tplName" placeholder="نام تمپلیت..." />
+    <label>تمپلیت:</label>
+    <select id="tplList"><option value="">[جدید]</option></select>
+    <span class="badge">🧩 ادیتور قالب ایمیل</span>
+  </div>
+
+  <!-- پنل کناری بلوک‌ها (سمت راست) -->
+  <aside id="dock">
+    <header>
+      <strong>بلوک‌ها</strong>
+      <button id="btnHideDock">❌</button>
+    </header>
+    <div id="blocks"></div>
+  </aside>
+
+  <div id="gjs"></div>
+
+  <!-- نسخه ماژولی با دو پلاگین: Newsletter + Basic Blocks -->
+  <script type="module">
+    import grapesjs from 'https://cdn.jsdelivr.net/npm/grapesjs@0.21.8/+esm'
+    import gjsNewsletter from 'https://cdn.jsdelivr.net/npm/grapesjs-preset-newsletter@1.0.1/+esm'
+    import gjsBasic from 'https://cdn.jsdelivr.net/npm/grapesjs-blocks-basic@1.0.2/+esm'
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
+
+    // Supabase (کلید/آدرس پروژه خودت)
+    const supabase = createClient(
+      'https://tdvimwqotnuvcdvhvbjj.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRkdmltd3FvdG51dmNkdmh2YmpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkxMDY2MjcsImV4cCI6MjA2NDY4MjYyN30.CWNPk-S-ECq0c1LRugDJYOchY3mgC2Zchyr8X8-mDeE',
+      { auth: { persistSession: false } }
+    );
+
+    // ادیتور
+    const editor = grapesjs.init({
+      container: '#gjs',
+      height: '100%',
+      storageManager: false,
+      // هر دو پلاگین را فعال کن
+      plugins: [gjsNewsletter, gjsBasic],
+      pluginsOpts: {
+        [gjsBasic.name]: {
+          flexGrid: true,
+          // می‌تونی با blocks[] مشخص کنی کدام‌ها باشند؛ خالی بگذاری یعنی همهٔ پیش‌فرض‌ها
+          // blocks: ['column1','column2','column3','text','image','link','video','list','quote','button','divider'],
+        },
+      }
+    });
+
+    // رندر لیست بلاک‌ها داخل داک سمت راست
+    const blocksEl = document.getElementById('blocks');
+    editor.BlockManager.render(blocksEl);
+
+    // باز/بسته کردن داک
+    const dock = document.getElementById('dock');
+    const gjs = document.getElementById('gjs');
+    document.getElementById('btnHideDock').onclick = () => {
+      dock.classList.add('hidden');
+      gjs.style.marginRight = '0px';
+    };
+    document.getElementById('btnToggleDock').onclick = () => {
+      const hidden = dock.classList.toggle('hidden');
+      gjs.style.marginRight = hidden ? '0px' : '300px';
+    };
+
+    // درج متغیر در عنصر انتخاب‌شده (یا افزودن پاراگراف جدید)
+    document.getElementById('btnInsertVar').onclick = () => {
+      const val = document.getElementById('varList').value;
+      const comp = editor.getSelected();
+      if (comp) comp.append(`<span>${val}</span>`);
+      else editor.getWrapper().append(`<p>${val}</p>`);
+    };
+
+    // --- CRUD تمپلیت‌ها
+    async function loadTemplates() {
+      const { data, error } = await supabase
+        .from('email_templates')
+        .select('id,name')
+        .order('updated_at', { ascending: false });
+
+      const sel = document.getElementById('tplList');
+      sel.innerHTML = `<option value="">[جدید]</option>`;
+      if (!error && data) data.forEach(t => {
+        const o = document.createElement('option'); o.value = t.id; o.textContent = t.name; sel.appendChild(o);
+      });
+    }
+
+    async function loadTemplate(id) {
+      if (!id) { editor.setComponents(''); document.getElementById('tplName').value = ''; return; }
+      const { data, error } = await supabase
+        .from('email_templates')
+        .select('name, html')
+        .eq('id', id).single();
+      if (error) return alert('خطا در لود تمپلیت: ' + error.message);
+      document.getElementById('tplName').value = data.name;
+      editor.setComponents(data.html);
+    }
+
+    async function saveTemplate() {
+      const name = document.getElementById('tplName').value.trim();
+      if (!name) return alert('نام تمپلیت را وارد کن');
+      const html = editor.getHtml();
+      const vars = Array.from(new Set([...html.matchAll(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g)].map(m => m[0])));
+
+      const id = document.getElementById('tplList').value || null;
+      if (id) {
+        const { error } = await supabase.from('email_templates').update({ name, html, variables: vars }).eq('id', id);
+        if (error) return alert('❌ خطا در بروزرسانی: ' + error.message);
+      } else {
+        const slug = name.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9\-]/g,'');
+        const { data, error } = await supabase
+          .from('email_templates')
+          .insert([{ name, slug, html, variables: vars }])
+          .select('id').single();
+        if (error) return alert('❌ خطا در ذخیره: ' + error.message);
+        document.getElementById('tplList').value = data.id;
+      }
+      alert('✅ ذخیره شد');
+      loadTemplates();
+    }
+
+    document.getElementById('btnSave').onclick = saveTemplate;
+    document.getElementById('tplList').addEventListener('change', e => loadTemplate(e.target.value));
+
+    // پیش‌نمایش
+    document.getElementById('btnPreview').onclick = () => {
+      const w = window.open('about:blank','preview');
+      w.document.open(); w.document.write(editor.getHtml()); w.document.close();
+    };
+
+    // خروجی HTML
+    document.getElementById('btnExport').onclick = () => {
+      const blob = new Blob([editor.getHtml()], { type: 'text/html;charset=utf-8' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = (document.getElementById('tplName').value || 'template') + '.html';
+      a.click();
+    };
+
+    // شروع
+    await loadTemplates();
+  </script>
+</body>
+</html>
