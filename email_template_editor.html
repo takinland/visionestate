@@ -13,8 +13,18 @@
     .topbar select,.topbar input,.topbar button{padding:6px;border-radius:6px;border:1px solid #334155}
     .badge{margin-left:auto;opacity:.9}
 
-    /* بوم ادیتور */
+    /* بوم ادیتور (ظرف ادیتور) */
     #gjs{ height: calc(100vh - 52px); margin-right: 320px; }
+
+    /* خودِ canvas را از سمت راست به اندازه پنل خالی کن تا روی هم نیفتند */
+    .gjs-cv-canvas{
+      position:absolute !important;
+      top:0; bottom:0; left:0; right:320px !important;
+    }
+    /* ارتفاع لایه‌های داخلی بوم */
+    #gjs, .gjs-cv-canvas, .gjs-frame-wrapper, .gjs-canvas{
+      height: calc(100vh - 52px) !important;
+    }
 
     /* پنل پیش‌فرض Blocks را به راست منتقل و ثابت کن */
     .gjs-pn-views-container{
@@ -114,7 +124,7 @@
         </td></tr></table>`});
     }
 
-    // پنل Blocks را سمت راست و باز نگه دار
+    // پنل Blocks را سمت راست و باز نگه دار + روت droppable
     function openBlocksPanel(){
       const pn = editor.Panels.getPanel('views');
       pn && pn.set('visible', true);
@@ -125,6 +135,8 @@
     editor.on('load', () => {
       ensureBaseBlocks();
       openBlocksPanel();
+      // بسیار مهم: روت قابل drop باشد
+      editor.getWrapper().set('droppable', true);
     });
     // در صورت تأخیر رندر، دوباره تلاش کن
     setTimeout(openBlocksPanel, 0);
@@ -165,7 +177,7 @@
         const { error } = await supabase.from('email_templates').update({ name, html, variables: vars }).eq('id', id);
         if (error) return alert('❌ خطا در بروزرسانی: '+error.message);
       } else {
-        const slug = name.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9\-]/g,'');
+        const slug = name.toLowerCase().replace(/\س+/g,'-').replace(/[^a-z0-9\-]/g,'');
         const { data, error } = await supabase.from('email_templates')
           .insert([{ name, slug, html, variables: vars }]).select('id').single();
         if (error) return alert('❌ خطا در ذخیره: '+error.message);
