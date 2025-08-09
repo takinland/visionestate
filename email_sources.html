@@ -4,37 +4,20 @@
   <meta charset="UTF-8" />
   <title>📑 منابع ایمیل</title>
   <style>
-    body {
-      font-family: Tahoma, 'Vazir', sans-serif;
-      background-color: #f9f9f9;
-      padding: 20px;
-      direction: rtl;
-    }
-    h2 { text-align: center; color: #333; }
-    table {
-      width: 100%; border-collapse: collapse;
-      margin-top: 20px; background: #fff;
-    }
-    th, td {
-      border: 1px solid #ccc;
-      padding: 8px; text-align: right;
-    }
-    th { background-color: #eee; }
-    input, button {
-      font-family: inherit;
-      padding: 6px;
-    }
-    .form-inline {
-      margin-top: 30px;
-      background: #fff;
-      padding: 15px;
-      border-radius: 10px;
-      box-shadow: 0 0 5px rgba(0,0,0,0.1);
-    }
+    body{font-family:Tahoma,'Vazir',sans-serif;background:#f9f9f9;padding:20px}
+    h2{text-align:center;color:#333}
+    table{width:100%;border-collapse:collapse;margin-top:20px;background:#fff}
+    th,td{border:1px solid #ccc;padding:8px;text-align:right}
+    th{background:#eee}
+    input,button{font-family:inherit;padding:6px}
+    .form-inline{margin-top:30px;background:#fff;padding:15px;border-radius:10px;box-shadow:0 0 5px rgba(0,0,0,.1)}
+    #status{float:left;background:#fff;padding:6px 10px;border:1px solid #ddd;border-radius:6px}
+    #error{white-space:pre-wrap;color:#b00020;background:#fff;padding:10px;border-radius:8px;border:1px dashed #b00020;margin-top:16px;display:none}
   </style>
 </head>
 <body>
-  <h2>📑 منابع ایمیل</h2>
+  <h2>منابع ایمیل 📄</h2>
+  <div id="status">⏳ در حال بارگذاری…</div>
 
   <table id="dataTable">
     <thead>
@@ -42,7 +25,7 @@
       <tr id="filterRow" class="filter-row"></tr>
     </thead>
     <tbody id="tableBody">
-      <tr><td colspan="99">⏳ در حال بارگذاری...</td></tr>
+      <tr><td colspan="99">⏳ …</td></tr>
     </tbody>
   </table>
 
@@ -54,88 +37,125 @@
     </form>
   </div>
 
-  <!-- Supabase SDK -->
-  <script type="module">
-    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+  <div id="error"></div>
 
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
+
+    // 🔑 حتماً با مقادیر پروژه خودت یکی باشد
     const supabaseUrl = 'https://tdvimwqotnuvcdvhvbjj.supabase.co'
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRkdmltd3FvdG51dmNkdmh2YmpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkxMDY2MjcsImV4cCI6MjA2NDY4MjYyN30.CWNPk-S-ECq0c1LRugDJYOchY3mgC2Zchyr8X8-mDeE'
-    const supabase = createClient(supabaseUrl, supabaseKey)
 
-
+    const supabase = createClient(supabaseUrl, supabaseKey, { auth: { persistSession: false } })
     const tableName = 'email_sources'
-    const allFields = ['name', 'description']
+    const allFields = ['name','description']
+
+    const $ = s => document.querySelector(s)
+    const status = $('#status')
+    const errorBox = $('#error')
+
+    function showError(msg, err) {
+      console.error(msg, err)
+      errorBox.style.display = 'block'
+      errorBox.textContent = `${msg}\n${err?.message || err || ''}`
+      status.textContent = '❌ خطا'
+    }
 
     async function fetchData() {
-      const { data, error } = await supabase.from(tableName).select('*')
-      if (error) {
-        alert('⚠️ خطا در واکشی اطلاعات: ' + error.message)
-        console.error(error)
-      } else {
-        renderTable(data)
-      }
+      status.textContent = '⏳ واکشی داده…'
+      const { data, error } = await supabase.from(tableName).select('*').order('id', { ascending: true })
+      if (error) return showError('خطا در واکشی داده از Supabase:', error)
+      renderTable(data)
+      status.textContent = '✅ آماده'
     }
 
     function renderTable(data) {
-      const headerRow = document.getElementById('headerRow')
-      const filterRow = document.getElementById('filterRow')
-      const tableBody = document.getElementById('tableBody')
-      const addFields  = document.getElementById('addFields')
+      const headerRow = $('#headerRow')
+      const filterRow = $('#filterRow')
+      const tableBody = $('#tableBody')
+      const addFields  = $('#addFields')
+      headerRow.innerHTML = filterRow.innerHTML = tableBody.innerHTML = addFields.innerHTML = ''
 
-      headerRow.innerHTML = ''
-      filterRow.innerHTML = ''
-      tableBody.innerHTML = ''
-      addFields.innerHTML = ''
-
-      // Header + Filters
+      // headers + filters
       allFields.forEach(field => {
-        const th = document.createElement('th')
-        th.textContent = field
-        headerRow.appendChild(th)
-
+        const th = document.createElement('th'); th.textContent = field; headerRow.appendChild(th)
         const tf = document.createElement('th')
-        const input = document.createElement('input')
-        input.placeholder = 'فیلتر...'
-        input.dataset.field = field
+        const input = document.createElement('input'); input.placeholder='فیلتر…'; input.dataset.field=field
         input.addEventListener('input', applyFilter)
-        tf.appendChild(input)
-        filterRow.appendChild(tf)
+        tf.appendChild(input); filterRow.appendChild(tf)
       })
-
-      // Actions header
-      const thActions = document.createElement('th')
-      thActions.textContent = 'اقدامات'
-      headerRow.appendChild(thActions)
-      const thActionsFilter = document.createElement('th')
-      filterRow.appendChild(thActionsFilter)
+      const thAct = document.createElement('th'); thAct.textContent='اقدامات'; headerRow.appendChild(thAct)
+      filterRow.appendChild(document.createElement('th'))
 
       if (!data || data.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="${allFields.length + 1}">📭 داده‌ای یافت نشد.</td></tr>`
+        tableBody.innerHTML = `<tr><td colspan="${allFields.length+1}">📭 داده‌ای یافت نشد.</td></tr>`
         return
       }
 
-      // Rows
       data.forEach(row => {
         const tr = document.createElement('tr')
         const rowInputs = {}
-
         allFields.forEach(field => {
           const td = document.createElement('td')
           const input = document.createElement('input')
           input.value = row[field] ?? ''
           input.dataset.field = field
           rowInputs[field] = input
-          td.appendChild(input)
-          tr.appendChild(td)
+          td.appendChild(input); tr.appendChild(td)
         })
-
         const actionsTd = document.createElement('td')
 
-        // Update button
         const updateBtn = document.createElement('button')
         updateBtn.textContent = '✏️ بروزرسانی'
         updateBtn.onclick = async () => {
-          const updated = {}
-          allFields.forEach(field => (updated[field] = rowInputs[field].value))
+          const payload = {}; allFields.forEach(f => payload[f] = rowInputs[f].value)
+          const { error } = await supabase.from(tableName).update(payload).eq('id', row.id)
+          if (error) return showError('خطا در بروزرسانی:', error)
+          alert('✅ بروزرسانی شد')
+        }
+        actionsTd.appendChild(updateBtn)
 
-          const { error } =
+        const delBtn = document.createElement('button')
+        delBtn.textContent = '🗑 حذف'; delBtn.style.marginRight='10px'
+        delBtn.onclick = async () => {
+          if (!confirm('حذف این ردیف؟')) return
+          const { error } = await supabase.from(tableName).delete().eq('id', row.id)
+          if (error) return showError('خطا در حذف:', error)
+          tr.remove()
+        }
+        actionsTd.appendChild(delBtn)
+
+        tr.appendChild(actionsTd); tableBody.appendChild(tr)
+      })
+
+      // add form
+      allFields.forEach(field => {
+        const input = document.createElement('input'); input.name=field; input.placeholder=field
+        addFields.appendChild(input)
+      })
+    }
+
+    async function applyFilter() {
+      const filters = Array.from(document.querySelectorAll('.filter-row input'))
+        .filter(i => i.value.trim() !== '')
+        .map(i => ({ field: i.dataset.field, value: i.value.trim() }))
+      let query = supabase.from(tableName).select('*')
+      filters.forEach(f => { query = query.ilike(f.field, `%${f.value}%`) })
+      const { data, error } = await query
+      if (error) return showError('خطا در فیلتر:', error)
+      renderTable(data)
+    }
+
+    document.getElementById('addForm').addEventListener('submit', async e => {
+      e.preventDefault()
+      const formData = new FormData(e.target)
+      const rec = {}; for (let [k,v] of formData.entries()) rec[k]=v
+      const { error } = await supabase.from(tableName).insert([rec])
+      if (error) return showError('خطا در درج داده:', error)
+      e.target.reset(); fetchData()
+    })
+
+    fetchData()
+  </script>
+</body>
+</html>
